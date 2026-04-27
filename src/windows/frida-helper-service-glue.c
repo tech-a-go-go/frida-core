@@ -544,7 +544,7 @@ frida_unregister_stale_services (FridaServiceContext * self)
     {
       ENUM_SERVICE_STATUS_PROCESSW * service = &services[i];
 
-      if (wcsncmp (service->lpServiceName, L"frida-", 6) == 0 && wcslen (service->lpServiceName) == 41)
+      if (wcsncmp (service->lpServiceName, L"sunday-", 7) == 0 && wcslen (service->lpServiceName) == 42)
       {
         SC_HANDLE handle = OpenServiceW (self->scm, service->lpServiceName, SERVICE_QUERY_CONFIG | DELETE);
         if (handle != NULL)

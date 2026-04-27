@@ -404,7 +404,7 @@ namespace Frida {
 
 #if HAVE_EMBEDDED_ASSETS
 		private TemporaryFile add_helper (string name, Frida.Data.Helper.Blob blob, TemporaryDirectory tempdir) throws Error {
-			var file = new TemporaryFile.from_stream (@"frida-helper-$name.exe",
+			var file = new TemporaryFile.from_stream (@"sunday-helper-$name.exe",
 				new MemoryInputStream.from_data (blob.data, null),
 				tempdir);
 			helpers.add (file);

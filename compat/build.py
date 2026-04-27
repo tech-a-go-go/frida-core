@@ -765,21 +765,21 @@ OVERRIDDEN_COMPAT_OPTIONS = {
 }
 
 HELPER_TARGET = "frida-helper"
-HELPER_FILE_WINDOWS = Path("src") / "frida-helper.exe"
-HELPER_FILE_UNIX = Path("src") / "frida-helper"
+HELPER_FILE_WINDOWS = Path("src") / "sunday-helper.exe"
+HELPER_FILE_UNIX = Path("src") / "sunday-helper"
 
 AGENT_TARGET = "frida-agent"
-AGENT_FILE_WINDOWS = Path("lib") / "agent" / "frida-agent.dll"
-AGENT_FILE_DARWIN = Path("lib") / "agent" / "frida-agent.dylib"
-AGENT_FILE_ELF = Path("lib") / "agent" / "frida-agent.so"
+AGENT_FILE_WINDOWS = Path("lib") / "agent" / "sunday-agent.dll"
+AGENT_FILE_DARWIN = Path("lib") / "agent" / "sunday-agent.dylib"
+AGENT_FILE_ELF = Path("lib") / "agent" / "sunday-agent.so"
 
 GADGET_TARGET = "frida-gadget"
-GADGET_FILE_WINDOWS = Path("lib") / "gadget" / "frida-gadget.dll"
-GADGET_FILE_DARWIN = Path("lib") / "gadget" / "frida-gadget.dylib"
-GADGET_FILE_ELF = Path("lib") / "gadget" / "frida-gadget.so"
+GADGET_FILE_WINDOWS = Path("lib") / "gadget" / "sunday-gadget.dll"
+GADGET_FILE_DARWIN = Path("lib") / "gadget" / "sunday-gadget.dylib"
+GADGET_FILE_ELF = Path("lib") / "gadget" / "sunday-gadget.so"
 
 SERVER_TARGET = "frida-server"
-SERVER_FILE_UNIX = Path("server") / "frida-server"
+SERVER_FILE_UNIX = Path("server") / "sunday-server"
 
 MSVS_ENVVARS = {
     "PLATFORM",

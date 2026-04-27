@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class PackageManager : Object {
 		public signal void install_progress (PackageInstallPhase phase, double fraction, string? details = null);
 

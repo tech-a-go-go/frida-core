@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class SpawnGater : Object {
 		public signal void spawn_added (HostSpawnInfo info);
 		public signal void spawn_removed (HostSpawnInfo info);
@@ -45,7 +45,7 @@ namespace Frida {
 		public void start () throws Error {
 			assert (state == STOPPED);
 
-			var obj = BpfObject.open ("spawn-gater.elf", Frida.Data.HelperBackend.get_spawn_gater_elf_blob ().data);
+			var obj = BpfObject.open ("spawn-gater.elf", Sunday.Data.HelperBackend.get_spawn_gater_elf_blob ().data);
 
 			var events = obj.maps.get_by_name ("events");
 

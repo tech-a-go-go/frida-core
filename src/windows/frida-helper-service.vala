@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public int main (string[] args) {
 		HelperMode mode = HelperMode.SERVICE;
 

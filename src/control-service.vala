@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class ControlService : Object {
 		public EndpointParameters endpoint_params {
 			get;
@@ -218,7 +218,7 @@ namespace Frida {
 		}
 
 		private void on_interface_detached (DynamicInterface iface) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				ConnectionHandler handler;
 				if (dynamic_interface_handlers.unset (iface.name, out handler))
 					handler.close.begin (io_cancellable);
@@ -268,7 +268,7 @@ namespace Frida {
 			}
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			assert (main_context != null);
 
 			var source = new IdleSource ();
@@ -836,10 +836,10 @@ namespace Frida {
 					registrations.add (connection.register_object (ObjectPath.HOST_SESSION, session));
 
 					AuthenticationService null_auth = new NullAuthenticationService ();
-					registrations.add (connection.register_object (Frida.ObjectPath.AUTHENTICATION_SERVICE, null_auth));
+					registrations.add (connection.register_object (Sunday.ObjectPath.AUTHENTICATION_SERVICE, null_auth));
 
 					TransportBroker broker = this;
-					registrations.add (connection.register_object (Frida.ObjectPath.TRANSPORT_BROKER, broker));
+					registrations.add (connection.register_object (Sunday.ObjectPath.TRANSPORT_BROKER, broker));
 				} catch (IOError e) {
 					assert_not_reached ();
 				}

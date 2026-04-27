@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone {
 	public interface Allocator : Object {
 		public abstract size_t page_size {
 			get;
@@ -35,7 +35,7 @@ namespace Frida.Barebone {
 		}
 
 		public async Allocation allocate (size_t size, size_t alignment, Cancellable? cancellable) throws Error, IOError {
-			throw new Error.NOT_SUPPORTED ("To enable this feature, specify an allocator in your FRIDA_BAREBONE_CONFIG");
+			throw new Error.NOT_SUPPORTED ("To enable this feature, specify an allocator in your SUNDAY_BAREBONE_CONFIG");
 		}
 	}
 

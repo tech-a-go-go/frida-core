@@ -1,18 +1,18 @@
-#ifndef __FRIDA_LINUX_PERF_EVENT_H__
-#define __FRIDA_LINUX_PERF_EVENT_H__
+#ifndef __SUNDAY_LINUX_PERF_EVENT_H__
+#define __SUNDAY_LINUX_PERF_EVENT_H__
 
 #include <glib.h>
 
 G_BEGIN_DECLS
 
-#define FRIDA_PERF_EVENT_COUNT_SW_CPU_CLOCK  0
+#define SUNDAY_PERF_EVENT_COUNT_SW_CPU_CLOCK  0
 
-typedef struct _FridaPerfEventAttr FridaPerfEventAttr;
-typedef guint32 FridaPerfEventType;
+typedef struct _SundayPerfEventAttr SundayPerfEventAttr;
+typedef guint32 SundayPerfEventType;
 
-struct _FridaPerfEventAttr
+struct _SundayPerfEventAttr
 {
-  FridaPerfEventType event_type;
+  SundayPerfEventType event_type;
   guint32 size;
   guint64 config;
 
@@ -43,10 +43,10 @@ struct _FridaPerfEventAttr
   };
 };
 
-enum _FridaPerfEventType
+enum _SundayPerfEventType
 {
-  FRIDA_PERF_EVENT_TYPE_HARDWARE,
-  FRIDA_PERF_EVENT_TYPE_SOFTWARE,
+  SUNDAY_PERF_EVENT_TYPE_HARDWARE,
+  SUNDAY_PERF_EVENT_TYPE_SOFTWARE,
 };
 
 G_END_DECLS

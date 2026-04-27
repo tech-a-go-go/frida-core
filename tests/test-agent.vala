@@ -1,4 +1,4 @@
-namespace Frida.AgentTest {
+namespace Sunday.AgentTest {
 	public static void add_tests () {
 		GLib.Test.add_func ("/Agent/Script/load-and-receive-messages", () => {
 			var h = new Harness ((h) => Script.load_and_receive_messages.begin (h as Harness));
@@ -270,7 +270,7 @@ Interceptor.attach(Process.getModuleByName('/usr/lib/system/libsystem_kernel.dyl
 						break;
 					}
 
-					var child = Frida.Test.Process.start ("/bin/ls", new string[] {
+					var child = Sunday.Test.Process.start ("/bin/ls", new string[] {
 						"UIKitApplication:foo.bar.Baz[0x1234]"
 					});
 
@@ -400,10 +400,10 @@ Interceptor.attach(Process.getModuleByName('libsystem_kernel.dylib').getExportBy
 		public extern static uint target_function (int level, string message);
 	}
 
-	private sealed class Harness : Frida.Test.AsyncHarness, AgentController, AgentMessageSink {
+	private sealed class Harness : Sunday.Test.AsyncHarness, AgentController, AgentMessageSink {
 		private GLib.Module module;
 		[CCode (has_target = false)]
-		private delegate void AgentMainFunc (string data, ref Frida.UnloadPolicy unload_policy, void * opaque_injector_state);
+		private delegate void AgentMainFunc (string data, ref Sunday.UnloadPolicy unload_policy, void * opaque_injector_state);
 		private AgentMainFunc main_impl;
 #if LINUX
 		private FileDescriptor agent_ctrlfd_for_peer;
@@ -419,7 +419,7 @@ Interceptor.attach(Process.getModuleByName('libsystem_kernel.dylib').getExportBy
 
 		private Gee.Queue<AgentMessage?> message_queue = new Gee.LinkedList<AgentMessage?> ();
 
-		public Harness (owned Frida.Test.AsyncHarness.TestSequenceFunc func) {
+		public Harness (owned Sunday.Test.AsyncHarness.TestSequenceFunc func) {
 			base ((owned) func);
 		}
 
@@ -436,13 +436,13 @@ Interceptor.attach(Process.getModuleByName('libsystem_kernel.dylib').getExportBy
 			shlib_extension = "so";
 #endif
 #if IOS || TVOS || ANDROID || QNX
-			var deployment_dir = Path.get_dirname (Frida.Test.Process.current.filename);
+			var deployment_dir = Path.get_dirname (Sunday.Test.Process.current.filename);
 			agent_filename = Path.build_filename (deployment_dir, "frida-agent." + shlib_extension);
 #else
-			var frida_root_dir = Path.get_dirname (Path.get_dirname (Frida.Test.Process.current.filename));
-			agent_filename = Path.build_filename (frida_root_dir, "lib", "frida", "frida-agent." + shlib_extension);
+			var sunday_root_dir = Path.get_dirname (Path.get_dirname (Sunday.Test.Process.current.filename));
+			agent_filename = Path.build_filename (sunday_root_dir, "lib", "frida", "frida-agent." + shlib_extension);
 			if (!FileUtils.test (agent_filename, FileTest.EXISTS))
-				agent_filename = Path.build_filename (frida_root_dir, "lib", "agent", "frida-agent." + shlib_extension);
+				agent_filename = Path.build_filename (sunday_root_dir, "lib", "agent", "frida-agent." + shlib_extension);
 #endif
 
 			try {
@@ -452,7 +452,7 @@ Interceptor.attach(Process.getModuleByName('libsystem_kernel.dylib').getExportBy
 			}
 
 			void * main_func_symbol;
-			var main_func_found = module.symbol ("frida_agent_main", out main_func_symbol);
+			var main_func_found = module.symbol ("sunday_agent_main", out main_func_symbol);
 			assert_true (main_func_found);
 			main_impl = (AgentMainFunc) main_func_symbol;
 
@@ -561,7 +561,7 @@ Interceptor.attach(Process.getModuleByName('libsystem_kernel.dylib').getExportBy
 
 #if LINUX
 			var s = LinuxInjectorState ();
-			s.frida_ctrlfd = -1;
+			s.sunday_ctrlfd = -1;
 			s.agent_ctrlfd = agent_ctrlfd_for_peer.steal ();
 			injector_state = &s;
 #endif

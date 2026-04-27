@@ -13,12 +13,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define FRIDA_STACK_ALIGNMENT 16
-#define FRIDA_RED_ZONE_SIZE 128
+#define SUNDAY_STACK_ALIGNMENT 16
+#define SUNDAY_RED_ZONE_SIZE 128
 #if GLIB_SIZEOF_VOID_P == 8
-# define FRIDA_MAP_FAILED G_MAXUINT64
+# define SUNDAY_MAP_FAILED G_MAXUINT64
 #else
-# define FRIDA_MAP_FAILED G_MAXUINT32
+# define SUNDAY_MAP_FAILED G_MAXUINT32
 #endif
 
 #define CHECK_OS_RESULT(n1, cmp, n2, op) \
@@ -28,26 +28,26 @@
     goto os_failure; \
   }
 
-typedef struct reg FridaRegs;
+typedef struct reg SundayRegs;
 
-#define FRIDA_REMOTE_DATA_FIELD(n) \
-    (remote_address + params->data.offset + G_STRUCT_OFFSET (FridaTrampolineData, n))
+#define SUNDAY_REMOTE_DATA_FIELD(n) \
+    (remote_address + params->data.offset + G_STRUCT_OFFSET (SundayTrampolineData, n))
 
-#define FRIDA_DUMMY_RETURN_ADDRESS 0x320
+#define SUNDAY_DUMMY_RETURN_ADDRESS 0x320
 
-typedef struct _FridaSpawnInstance FridaSpawnInstance;
-typedef struct _FridaExecInstance FridaExecInstance;
-typedef struct _FridaNotifyExecPendingContext FridaNotifyExecPendingContext;
-typedef struct _FridaInjectInstance FridaInjectInstance;
-typedef struct _FridaInjectParams FridaInjectParams;
-typedef struct _FridaInjectRegion FridaInjectRegion;
-typedef struct _FridaCodeChunk FridaCodeChunk;
-typedef struct _FridaTrampolineData FridaTrampolineData;
-typedef struct _FridaRemoteApi FridaRemoteApi;
+typedef struct _SundaySpawnInstance SundaySpawnInstance;
+typedef struct _SundayExecInstance SundayExecInstance;
+typedef struct _SundayNotifyExecPendingContext SundayNotifyExecPendingContext;
+typedef struct _SundayInjectInstance SundayInjectInstance;
+typedef struct _SundayInjectParams SundayInjectParams;
+typedef struct _SundayInjectRegion SundayInjectRegion;
+typedef struct _SundayCodeChunk SundayCodeChunk;
+typedef struct _SundayTrampolineData SundayTrampolineData;
+typedef struct _SundayRemoteApi SundayRemoteApi;
 
-typedef void (* FridaInjectEmitFunc) (const FridaInjectParams * params, GumAddress remote_address, FridaCodeChunk * code);
+typedef void (* SundayInjectEmitFunc) (const SundayInjectParams * params, GumAddress remote_address, SundayCodeChunk * code);
 
-struct _FridaRemoteApi
+struct _SundayRemoteApi
 {
   GumAddress mmap_impl;
   GumAddress munmap_impl;
@@ -62,34 +62,34 @@ struct _FridaRemoteApi
   GumAddress dlsym_impl;
 };
 
-struct _FridaSpawnInstance
+struct _SundaySpawnInstance
 {
   pid_t pid;
   lwpid_t interruptible_thread;
 
-  FridaBinjector * binjector;
+  SundayBinjector * binjector;
 };
 
-struct _FridaExecInstance
+struct _SundayExecInstance
 {
   pid_t pid;
   lwpid_t interruptible_thread;
 
-  FridaBinjector * binjector;
+  SundayBinjector * binjector;
 };
 
-struct _FridaNotifyExecPendingContext
+struct _SundayNotifyExecPendingContext
 {
   pid_t pid;
   gboolean pending;
 };
 
-struct _FridaInjectInstance
+struct _SundayInjectInstance
 {
   guint id;
 
   pid_t pid;
-  FridaRemoteApi api;
+  SundayRemoteApi api;
   gchar * executable_path;
   gboolean already_attached;
   gboolean exec_pending;
@@ -106,20 +106,20 @@ struct _FridaInjectInstance
   GumAddress stack_top;
   GumAddress trampoline_data;
 
-  FridaBinjector * binjector;
+  SundayBinjector * binjector;
 };
 
-struct _FridaInjectRegion
+struct _SundayInjectRegion
 {
   guint offset;
   guint size;
 };
 
-struct _FridaInjectParams
+struct _SundayInjectParams
 {
   pid_t pid;
 
-  FridaRemoteApi api;
+  SundayRemoteApi api;
 
   const gchar * so_path;
   const gchar * entrypoint_name;
@@ -127,22 +127,22 @@ struct _FridaInjectParams
 
   const gchar * fifo_path;
 
-  FridaInjectRegion code;
-  FridaInjectRegion data;
-  FridaInjectRegion guard;
-  FridaInjectRegion stack;
+  SundayInjectRegion code;
+  SundayInjectRegion data;
+  SundayInjectRegion guard;
+  SundayInjectRegion stack;
 
   GumAddress remote_address;
   guint remote_size;
 };
 
-struct _FridaCodeChunk
+struct _SundayCodeChunk
 {
   guint8 * cur;
   gsize size;
 };
 
-struct _FridaTrampolineData
+struct _SundayTrampolineData
 {
   gchar pthread_so_string[32];
   gchar pthread_create_string[16];
@@ -159,70 +159,70 @@ struct _FridaTrampolineData
   gpointer module_handle;
 };
 
-static gboolean frida_set_matching_inject_instances_exec_pending (GeeMapEntry * entry, FridaNotifyExecPendingContext * ctx);
+static gboolean sunday_set_matching_inject_instances_exec_pending (GeeMapEntry * entry, SundayNotifyExecPendingContext * ctx);
 
-static FridaSpawnInstance * frida_spawn_instance_new (FridaBinjector * binjector);
-static void frida_spawn_instance_free (FridaSpawnInstance * instance);
-static void frida_spawn_instance_resume (FridaSpawnInstance * self);
+static SundaySpawnInstance * sunday_spawn_instance_new (SundayBinjector * binjector);
+static void sunday_spawn_instance_free (SundaySpawnInstance * instance);
+static void sunday_spawn_instance_resume (SundaySpawnInstance * self);
 
-static FridaExecInstance * frida_exec_instance_new (FridaBinjector * binjector, pid_t pid);
-static void frida_exec_instance_free (FridaExecInstance * instance);
-static gboolean frida_exec_instance_prepare_transition (FridaExecInstance * self, GError ** error);
-static gboolean frida_exec_instance_try_perform_transition (FridaExecInstance * self, GError ** error);
-static void frida_exec_instance_suspend (FridaExecInstance * self);
-static void frida_exec_instance_resume (FridaExecInstance * self);
+static SundayExecInstance * sunday_exec_instance_new (SundayBinjector * binjector, pid_t pid);
+static void sunday_exec_instance_free (SundayExecInstance * instance);
+static gboolean sunday_exec_instance_prepare_transition (SundayExecInstance * self, GError ** error);
+static gboolean sunday_exec_instance_try_perform_transition (SundayExecInstance * self, GError ** error);
+static void sunday_exec_instance_suspend (SundayExecInstance * self);
+static void sunday_exec_instance_resume (SundayExecInstance * self);
 
-static FridaInjectInstance * frida_inject_instance_new (FridaBinjector * binjector, guint id, guint pid, const FridaRemoteApi * api,
+static SundayInjectInstance * sunday_inject_instance_new (SundayBinjector * binjector, guint id, guint pid, const SundayRemoteApi * api,
     const gchar * temp_path);
-static void frida_inject_instance_recreate_fifo (FridaInjectInstance * self);
-static FridaInjectInstance * frida_inject_instance_clone (const FridaInjectInstance * instance, guint id);
-static void frida_inject_instance_init_fifo (FridaInjectInstance * self);
-static void frida_inject_instance_close_previous_fifo (FridaInjectInstance * self);
-static void frida_inject_instance_free (FridaInjectInstance * instance, FridaUnloadPolicy unload_policy);
-static gboolean frida_inject_instance_did_not_exec (FridaInjectInstance * self);
-static gboolean frida_inject_instance_attach (FridaInjectInstance * self, FridaRegs * saved_regs, GError ** error);
-static gboolean frida_inject_instance_detach (FridaInjectInstance * self, const FridaRegs * saved_regs, GError ** error);
-static gboolean frida_inject_instance_start_remote_thread (FridaInjectInstance * self, gboolean * exited, GError ** error);
-static gboolean frida_inject_instance_emit_and_transfer_payload (FridaInjectEmitFunc func, const FridaInjectParams * params, GumAddress * entrypoint, GError ** error);
-static void frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAddress remote_address, FridaCodeChunk * code);
+static void sunday_inject_instance_recreate_fifo (SundayInjectInstance * self);
+static SundayInjectInstance * sunday_inject_instance_clone (const SundayInjectInstance * instance, guint id);
+static void sunday_inject_instance_init_fifo (SundayInjectInstance * self);
+static void sunday_inject_instance_close_previous_fifo (SundayInjectInstance * self);
+static void sunday_inject_instance_free (SundayInjectInstance * instance, SundayUnloadPolicy unload_policy);
+static gboolean sunday_inject_instance_did_not_exec (SundayInjectInstance * self);
+static gboolean sunday_inject_instance_attach (SundayInjectInstance * self, SundayRegs * saved_regs, GError ** error);
+static gboolean sunday_inject_instance_detach (SundayInjectInstance * self, const SundayRegs * saved_regs, GError ** error);
+static gboolean sunday_inject_instance_start_remote_thread (SundayInjectInstance * self, gboolean * exited, GError ** error);
+static gboolean sunday_inject_instance_emit_and_transfer_payload (SundayInjectEmitFunc func, const SundayInjectParams * params, GumAddress * entrypoint, GError ** error);
+static void sunday_inject_instance_emit_payload_code (const SundayInjectParams * params, GumAddress remote_address, SundayCodeChunk * code);
 
-static gboolean frida_wait_for_attach_signal (pid_t pid);
-static gboolean frida_wait_for_child_signal (pid_t pid, int signal, gboolean * exited);
-static gint frida_get_regs (pid_t pid, FridaRegs * regs);
-static gint frida_set_regs (pid_t pid, const FridaRegs * regs);
+static gboolean sunday_wait_for_attach_signal (pid_t pid);
+static gboolean sunday_wait_for_child_signal (pid_t pid, int signal, gboolean * exited);
+static gint sunday_get_regs (pid_t pid, SundayRegs * regs);
+static gint sunday_set_regs (pid_t pid, const SundayRegs * regs);
 
-static gboolean frida_run_to_entrypoint (pid_t pid, GError ** error);
+static gboolean sunday_run_to_entrypoint (pid_t pid, GError ** error);
 
-static gboolean frida_remote_api_try_init (FridaRemoteApi * api, pid_t pid);
-static GumAddress frida_remote_alloc (pid_t pid, size_t size, int prot, const FridaRemoteApi * api, GError ** error);
-static gboolean frida_remote_dealloc (pid_t pid, GumAddress address, size_t size, const FridaRemoteApi * api, GError ** error);
-static gboolean frida_remote_mprotect (pid_t pid, GumAddress address, size_t size, int prot, const FridaRemoteApi * api, GError ** error);
-static gboolean frida_remote_read (pid_t pid, GumAddress remote_address, gpointer data, gsize size, GError ** error);
-static gboolean frida_remote_write (pid_t pid, GumAddress remote_address, gconstpointer data, gsize size, GError ** error);
-static gboolean frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint args_length, GumAddress * retval,
+static gboolean sunday_remote_api_try_init (SundayRemoteApi * api, pid_t pid);
+static GumAddress sunday_remote_alloc (pid_t pid, size_t size, int prot, const SundayRemoteApi * api, GError ** error);
+static gboolean sunday_remote_dealloc (pid_t pid, GumAddress address, size_t size, const SundayRemoteApi * api, GError ** error);
+static gboolean sunday_remote_mprotect (pid_t pid, GumAddress address, size_t size, int prot, const SundayRemoteApi * api, GError ** error);
+static gboolean sunday_remote_read (pid_t pid, GumAddress remote_address, gpointer data, gsize size, GError ** error);
+static gboolean sunday_remote_write (pid_t pid, GumAddress remote_address, gconstpointer data, gsize size, GError ** error);
+static gboolean sunday_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint args_length, GumAddress * retval,
     gboolean * exited, GError ** error);
-static gboolean frida_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack, GumAddress * result, gboolean * exited,
+static gboolean sunday_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack, GumAddress * result, gboolean * exited,
     GError ** error);
 
 guint
-_frida_binjector_do_spawn (FridaBinjector * self, const gchar * path, FridaHostSpawnOptions * options, FridaStdioPipes ** pipes, GError ** error)
+_sunday_binjector_do_spawn (SundayBinjector * self, const gchar * path, SundayHostSpawnOptions * options, SundayStdioPipes ** pipes, GError ** error)
 {
-  FridaSpawnInstance * instance;
+  SundaySpawnInstance * instance;
   gchar ** argv, ** envp;
-  FridaFileDescriptor * in_fd = NULL;
-  FridaFileDescriptor * out_fd = NULL;
-  FridaFileDescriptor * err_fd = NULL;
+  SundayFileDescriptor * in_fd = NULL;
+  SundayFileDescriptor * out_fd = NULL;
+  SundayFileDescriptor * err_fd = NULL;
   GError * stdio_error = NULL;
   gchar * old_cwd = NULL;
   gboolean success;
   const gchar * failed_operation;
 
-  instance = frida_spawn_instance_new (self);
+  instance = sunday_spawn_instance_new (self);
 
-  argv = frida_host_spawn_options_compute_argv (options, path, NULL);
-  envp = frida_host_spawn_options_compute_envp (options, NULL);
+  argv = sunday_host_spawn_options_compute_argv (options, path, NULL);
+  envp = sunday_host_spawn_options_compute_envp (options, NULL);
 
-  *pipes = frida_make_stdio_pipes (options->stdio, TRUE, &in_fd, NULL, &out_fd, NULL, &err_fd, NULL, &stdio_error);
+  *pipes = sunday_make_stdio_pipes (options->stdio, TRUE, &in_fd, NULL, &out_fd, NULL, &err_fd, NULL, &stdio_error);
   if (stdio_error != NULL)
     goto propagate_stdio_error;
 
@@ -238,7 +238,7 @@ _frida_binjector_do_spawn (FridaBinjector * self, const gchar * path, FridaHostS
   {
     setsid ();
 
-    if (options->stdio == FRIDA_STDIO_PIPE)
+    if (options->stdio == SUNDAY_STDIO_PIPE)
     {
       dup2 (in_fd->handle, 0);
       dup2 (out_fd->handle, 1);
@@ -259,10 +259,10 @@ _frida_binjector_do_spawn (FridaBinjector * self, const gchar * path, FridaHostS
       g_warning ("Failed to restore working directory");
   }
 
-  success = frida_wait_for_child_signal (instance->pid, SIGTRAP, NULL);
+  success = sunday_wait_for_child_signal (instance->pid, SIGTRAP, NULL);
   CHECK_OS_RESULT (success, !=, FALSE, "wait(SIGTRAP)");
 
-  if (!frida_run_to_entrypoint (instance->pid, error))
+  if (!sunday_run_to_entrypoint (instance->pid, error))
     goto failure;
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->spawn_instances), GUINT_TO_POINTER (instance->pid), instance);
@@ -277,8 +277,8 @@ propagate_stdio_error:
 chdir_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_INVALID_ARGUMENT,
         "Unable to change directory to '%s'",
         options->cwd);
     goto failure;
@@ -287,15 +287,15 @@ os_failure:
   {
     (void) failed_operation;
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to spawn executable at '%s'",
         path);
     goto failure;
   }
 failure:
   {
-    g_clear_pointer (&instance, frida_spawn_instance_free);
+    g_clear_pointer (&instance, sunday_spawn_instance_free);
     goto beach;
   }
 beach:
@@ -313,25 +313,25 @@ beach:
 }
 
 void
-_frida_binjector_resume_spawn_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_resume_spawn_instance (SundayBinjector * self, void * instance)
 {
-  frida_spawn_instance_resume (instance);
+  sunday_spawn_instance_resume (instance);
 }
 
 void
-_frida_binjector_free_spawn_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_free_spawn_instance (SundayBinjector * self, void * instance)
 {
-  frida_spawn_instance_free (instance);
+  sunday_spawn_instance_free (instance);
 }
 
 void
-_frida_binjector_do_prepare_exec_transition (FridaBinjector * self, guint pid, GError ** error)
+_sunday_binjector_do_prepare_exec_transition (SundayBinjector * self, guint pid, GError ** error)
 {
-  FridaExecInstance * instance;
+  SundayExecInstance * instance;
 
-  instance = frida_exec_instance_new (self, pid);
+  instance = sunday_exec_instance_new (self, pid);
 
-  if (!frida_exec_instance_prepare_transition (instance, error))
+  if (!sunday_exec_instance_prepare_transition (instance, error))
     goto failure;
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->exec_instances), GUINT_TO_POINTER (pid), instance);
@@ -340,29 +340,29 @@ _frida_binjector_do_prepare_exec_transition (FridaBinjector * self, guint pid, G
 
 failure:
   {
-    frida_exec_instance_free (instance);
+    sunday_exec_instance_free (instance);
     return;
   }
 }
 
 void
-_frida_binjector_notify_exec_pending (FridaBinjector * self, guint pid, gboolean pending)
+_sunday_binjector_notify_exec_pending (SundayBinjector * self, guint pid, gboolean pending)
 {
-  FridaNotifyExecPendingContext ctx;
+  SundayNotifyExecPendingContext ctx;
 
   ctx.pid = pid;
   ctx.pending = pending;
 
   gee_abstract_map_foreach (GEE_ABSTRACT_MAP (self->inject_instances),
-      (GeeForallFunc) frida_set_matching_inject_instances_exec_pending, &ctx);
+      (GeeForallFunc) sunday_set_matching_inject_instances_exec_pending, &ctx);
 }
 
 static gboolean
-frida_set_matching_inject_instances_exec_pending (GeeMapEntry * entry, FridaNotifyExecPendingContext * ctx)
+sunday_set_matching_inject_instances_exec_pending (GeeMapEntry * entry, SundayNotifyExecPendingContext * ctx)
 {
-  FridaInjectInstance * instance;
+  SundayInjectInstance * instance;
 
-  instance = (FridaInjectInstance *) gee_map_entry_get_value (entry);
+  instance = (SundayInjectInstance *) gee_map_entry_get_value (entry);
   if (instance->pid == ctx->pid)
   {
     instance->exec_pending = ctx->pending;
@@ -372,36 +372,36 @@ frida_set_matching_inject_instances_exec_pending (GeeMapEntry * entry, FridaNoti
 }
 
 gboolean
-_frida_binjector_try_transition_exec_instance (FridaBinjector * self, void * instance, GError ** error)
+_sunday_binjector_try_transition_exec_instance (SundayBinjector * self, void * instance, GError ** error)
 {
-  return frida_exec_instance_try_perform_transition (instance, error);
+  return sunday_exec_instance_try_perform_transition (instance, error);
 }
 
 void
-_frida_binjector_suspend_exec_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_suspend_exec_instance (SundayBinjector * self, void * instance)
 {
-  frida_exec_instance_suspend (instance);
+  sunday_exec_instance_suspend (instance);
 }
 
 void
-_frida_binjector_resume_exec_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_resume_exec_instance (SundayBinjector * self, void * instance)
 {
-  frida_exec_instance_resume (instance);
+  sunday_exec_instance_resume (instance);
 }
 
 void
-_frida_binjector_free_exec_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_free_exec_instance (SundayBinjector * self, void * instance)
 {
-  frida_exec_instance_free (instance);
+  sunday_exec_instance_free (instance);
 }
 
 void
-_frida_binjector_do_inject (FridaBinjector * self, guint pid, const gchar * path, const gchar * entrypoint, const gchar * data, const gchar * temp_path, guint id, GError ** error)
+_sunday_binjector_do_inject (SundayBinjector * self, guint pid, const gchar * path, const gchar * entrypoint, const gchar * data, const gchar * temp_path, guint id, GError ** error)
 {
-  FridaInjectParams params;
+  SundayInjectParams params;
   guint offset, page_size;
-  FridaInjectInstance * instance;
-  FridaRegs saved_regs;
+  SundayInjectInstance * instance;
+  SundayRegs saved_regs;
   gboolean exited;
 
   params.pid = pid;
@@ -409,7 +409,7 @@ _frida_binjector_do_inject (FridaBinjector * self, guint pid, const gchar * path
   if (kill (pid, 0) != 0 && errno == EPERM)
     goto permission_denied;
 
-  if (!frida_remote_api_try_init (&params.api, pid))
+  if (!sunday_remote_api_try_init (&params.api, pid))
     goto no_libc;
 
   params.so_path = path;
@@ -440,30 +440,30 @@ _frida_binjector_do_inject (FridaBinjector * self, guint pid, const gchar * path
   params.remote_address = 0;
   params.remote_size = offset;
 
-  instance = frida_inject_instance_new (self, id, pid, &params.api, temp_path);
+  instance = sunday_inject_instance_new (self, id, pid, &params.api, temp_path);
   if (instance->executable_path == NULL)
     goto premature_termination;
 
-  if (!frida_inject_instance_attach (instance, &saved_regs, error))
+  if (!sunday_inject_instance_attach (instance, &saved_regs, error))
     goto premature_termination;
 
   params.fifo_path = instance->fifo_path;
-  params.remote_address = frida_remote_alloc (pid, params.remote_size, PROT_READ | PROT_WRITE, &params.api, error);
+  params.remote_address = sunday_remote_alloc (pid, params.remote_size, PROT_READ | PROT_WRITE, &params.api, error);
   if (params.remote_address == 0)
     goto premature_termination;
   instance->remote_payload = params.remote_address;
   instance->remote_size = params.remote_size;
 
-  if (!frida_inject_instance_emit_and_transfer_payload (frida_inject_instance_emit_payload_code, &params, &instance->entrypoint, error))
+  if (!sunday_inject_instance_emit_and_transfer_payload (sunday_inject_instance_emit_payload_code, &params, &instance->entrypoint, error))
     goto premature_termination;
   instance->stack_top = params.remote_address + params.stack.offset + params.stack.size;
   instance->trampoline_data = params.remote_address + params.data.offset;
 
-  if (!frida_inject_instance_start_remote_thread (instance, &exited, error) && !exited)
+  if (!sunday_inject_instance_start_remote_thread (instance, &exited, error) && !exited)
     goto premature_termination;
 
   if (!exited)
-    frida_inject_instance_detach (instance, &saved_regs, NULL);
+    sunday_inject_instance_detach (instance, &saved_regs, NULL);
   else
     g_clear_error (error);
 
@@ -474,8 +474,8 @@ _frida_binjector_do_inject (FridaBinjector * self, guint pid, const gchar * path
 permission_denied:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to access process with pid %u due to system restrictions;"
         " try running Frida as root",
         pid);
@@ -484,35 +484,35 @@ permission_denied:
 no_libc:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unable to inject library into process without libc");
     return;
   }
 premature_termination:
   {
-    frida_inject_instance_free (instance, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+    sunday_inject_instance_free (instance, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
     return;
   }
 }
 
 void
-_frida_binjector_demonitor (FridaBinjector * self, void * raw_instance)
+_sunday_binjector_demonitor (SundayBinjector * self, void * raw_instance)
 {
-  FridaInjectInstance * instance = raw_instance;
+  SundayInjectInstance * instance = raw_instance;
 
-  frida_inject_instance_recreate_fifo (instance);
+  sunday_inject_instance_recreate_fifo (instance);
 }
 
 guint
-_frida_binjector_demonitor_and_clone_injectee_state (FridaBinjector * self, void * raw_instance, guint clone_id)
+_sunday_binjector_demonitor_and_clone_injectee_state (SundayBinjector * self, void * raw_instance, guint clone_id)
 {
-  FridaInjectInstance * instance = raw_instance;
-  FridaInjectInstance * clone;
+  SundayInjectInstance * instance = raw_instance;
+  SundayInjectInstance * clone;
 
-  frida_inject_instance_recreate_fifo (instance);
+  sunday_inject_instance_recreate_fifo (instance);
 
-  clone = frida_inject_instance_clone (instance, clone_id);
+  clone = sunday_inject_instance_clone (instance, clone_id);
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->inject_instances), GUINT_TO_POINTER (clone->id), clone);
 
@@ -520,34 +520,34 @@ _frida_binjector_demonitor_and_clone_injectee_state (FridaBinjector * self, void
 }
 
 void
-_frida_binjector_recreate_injectee_thread (FridaBinjector * self, void * raw_instance, guint pid, GError ** error)
+_sunday_binjector_recreate_injectee_thread (SundayBinjector * self, void * raw_instance, guint pid, GError ** error)
 {
-  FridaInjectInstance * instance = raw_instance;
+  SundayInjectInstance * instance = raw_instance;
   gboolean is_uninitialized_clone;
-  FridaRegs saved_regs;
+  SundayRegs saved_regs;
   gboolean exited;
 
   is_uninitialized_clone = instance->pid == 0;
 
   instance->pid = pid;
 
-  frida_inject_instance_close_previous_fifo (instance);
+  sunday_inject_instance_close_previous_fifo (instance);
 
-  if (!frida_inject_instance_attach (instance, &saved_regs, error))
+  if (!sunday_inject_instance_attach (instance, &saved_regs, error))
     goto failure;
 
   if (is_uninitialized_clone)
   {
-    if (!frida_remote_write (pid, instance->trampoline_data + G_STRUCT_OFFSET (FridaTrampolineData, fifo_path),
+    if (!sunday_remote_write (pid, instance->trampoline_data + G_STRUCT_OFFSET (SundayTrampolineData, fifo_path),
         instance->fifo_path, strlen (instance->fifo_path) + 1, error))
       goto failure;
   }
 
-  if (!frida_inject_instance_start_remote_thread (instance, &exited, error) && !exited)
+  if (!sunday_inject_instance_start_remote_thread (instance, &exited, error) && !exited)
     goto failure;
 
   if (!exited)
-    frida_inject_instance_detach (instance, &saved_regs, NULL);
+    sunday_inject_instance_detach (instance, &saved_regs, NULL);
   else
     g_clear_error (error);
 
@@ -555,66 +555,66 @@ _frida_binjector_recreate_injectee_thread (FridaBinjector * self, void * raw_ins
 
 failure:
   {
-    _frida_binjector_destroy_inject_instance (self, instance->id, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+    _sunday_binjector_destroy_inject_instance (self, instance->id, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
     return;
   }
 }
 
 GInputStream *
-_frida_binjector_get_fifo_for_inject_instance (FridaBinjector * self, void * instance)
+_sunday_binjector_get_fifo_for_inject_instance (SundayBinjector * self, void * instance)
 {
-  return g_unix_input_stream_new (((FridaInjectInstance *) instance)->fifo, FALSE);
+  return g_unix_input_stream_new (((SundayInjectInstance *) instance)->fifo, FALSE);
 }
 
 void
-_frida_binjector_free_inject_instance (FridaBinjector * self, void * instance, FridaUnloadPolicy unload_policy)
+_sunday_binjector_free_inject_instance (SundayBinjector * self, void * instance, SundayUnloadPolicy unload_policy)
 {
-  frida_inject_instance_free (instance, unload_policy);
+  sunday_inject_instance_free (instance, unload_policy);
 }
 
 gboolean
-_frida_process_has_thread (guint pid, glong tid)
+_sunday_process_has_thread (guint pid, glong tid)
 {
   return thr_kill2 (pid, tid, 0) == 0;
 }
 
-static FridaSpawnInstance *
-frida_spawn_instance_new (FridaBinjector * binjector)
+static SundaySpawnInstance *
+sunday_spawn_instance_new (SundayBinjector * binjector)
 {
-  FridaSpawnInstance * instance;
+  SundaySpawnInstance * instance;
 
-  instance = g_slice_new0 (FridaSpawnInstance);
+  instance = g_slice_new0 (SundaySpawnInstance);
   instance->binjector = g_object_ref (binjector);
 
   return instance;
 }
 
 static void
-frida_spawn_instance_free (FridaSpawnInstance * instance)
+sunday_spawn_instance_free (SundaySpawnInstance * instance)
 {
   g_object_unref (instance->binjector);
 
-  g_slice_free (FridaSpawnInstance, instance);
+  g_slice_free (SundaySpawnInstance, instance);
 }
 
 static void
-frida_spawn_instance_resume (FridaSpawnInstance * self)
+sunday_spawn_instance_resume (SundaySpawnInstance * self)
 {
   if (self->interruptible_thread != 0)
   {
     thr_kill2 (self->pid, self->interruptible_thread, SIGSTOP);
-    frida_wait_for_child_signal (self->pid, SIGSTOP, NULL);
+    sunday_wait_for_child_signal (self->pid, SIGSTOP, NULL);
   }
 
   ptrace (PT_DETACH, self->pid, NULL, 0);
 }
 
-static FridaExecInstance *
-frida_exec_instance_new (FridaBinjector * binjector, pid_t pid)
+static SundayExecInstance *
+sunday_exec_instance_new (SundayBinjector * binjector, pid_t pid)
 {
-  FridaExecInstance * instance;
+  SundayExecInstance * instance;
 
-  instance = g_slice_new0 (FridaExecInstance);
+  instance = g_slice_new0 (SundayExecInstance);
   instance->pid = pid;
 
   instance->binjector = g_object_ref (binjector);
@@ -623,15 +623,15 @@ frida_exec_instance_new (FridaBinjector * binjector, pid_t pid)
 }
 
 static void
-frida_exec_instance_free (FridaExecInstance * instance)
+sunday_exec_instance_free (SundayExecInstance * instance)
 {
   g_object_unref (instance->binjector);
 
-  g_slice_free (FridaExecInstance, instance);
+  g_slice_free (SundayExecInstance, instance);
 }
 
 static gboolean
-frida_exec_instance_prepare_transition (FridaExecInstance * self, GError ** error)
+sunday_exec_instance_prepare_transition (SundayExecInstance * self, GError ** error)
 {
   int pt_result;
   const gchar * failed_operation;
@@ -654,16 +654,16 @@ frida_exec_instance_prepare_transition (FridaExecInstance * self, GError ** erro
 os_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to prepare for exec transition: %s failed", failed_operation);
     goto failure;
   }
 wait_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to prepare for exec transition: waitpid() failed");
     goto failure;
   }
@@ -674,7 +674,7 @@ failure:
 }
 
 static gboolean
-frida_exec_instance_try_perform_transition (FridaExecInstance * self, GError ** error)
+sunday_exec_instance_try_perform_transition (SundayExecInstance * self, GError ** error)
 {
   int status;
   pid_t wait_result;
@@ -686,7 +686,7 @@ frida_exec_instance_try_perform_transition (FridaExecInstance * self, GError ** 
   if (!WIFSTOPPED (status) || WSTOPSIG (status) != SIGTRAP)
     goto wait_failed;
 
-  if (!frida_run_to_entrypoint (self->pid, error))
+  if (!sunday_run_to_entrypoint (self->pid, error))
     goto failure;
 
   return TRUE;
@@ -694,8 +694,8 @@ frida_exec_instance_try_perform_transition (FridaExecInstance * self, GError ** 
 wait_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to wait for exec transition: waitpid() failed");
     goto failure;
   }
@@ -706,30 +706,30 @@ failure:
 }
 
 static void
-frida_exec_instance_suspend (FridaExecInstance * self)
+sunday_exec_instance_suspend (SundayExecInstance * self)
 {
   kill (self->pid, SIGSTOP);
-  frida_wait_for_child_signal (self->pid, SIGSTOP, NULL);
+  sunday_wait_for_child_signal (self->pid, SIGSTOP, NULL);
 }
 
 static void
-frida_exec_instance_resume (FridaExecInstance * self)
+sunday_exec_instance_resume (SundayExecInstance * self)
 {
   if (self->interruptible_thread != 0)
   {
     thr_kill2 (self->pid, self->interruptible_thread, SIGSTOP);
-    frida_wait_for_child_signal (self->pid, SIGSTOP, NULL);
+    sunday_wait_for_child_signal (self->pid, SIGSTOP, NULL);
   }
 
   ptrace (PT_DETACH, self->pid, NULL, 0);
 }
 
-static FridaInjectInstance *
-frida_inject_instance_new (FridaBinjector * binjector, guint id, guint pid, const FridaRemoteApi * api, const gchar * temp_path)
+static SundayInjectInstance *
+sunday_inject_instance_new (SundayBinjector * binjector, guint id, guint pid, const SundayRemoteApi * api, const gchar * temp_path)
 {
-  FridaInjectInstance * instance;
+  SundayInjectInstance * instance;
 
-  instance = g_slice_new0 (FridaInjectInstance);
+  instance = g_slice_new0 (SundayInjectInstance);
   instance->id = id;
 
   instance->pid = pid;
@@ -740,7 +740,7 @@ frida_inject_instance_new (FridaBinjector * binjector, guint id, guint pid, cons
 
   instance->temp_path = g_strdup (temp_path);
 
-  frida_inject_instance_init_fifo (instance);
+  sunday_inject_instance_init_fifo (instance);
   instance->previous_fifo = -1;
 
   instance->binjector = g_object_ref (binjector);
@@ -749,22 +749,22 @@ frida_inject_instance_new (FridaBinjector * binjector, guint id, guint pid, cons
 }
 
 static void
-frida_inject_instance_recreate_fifo (FridaInjectInstance * self)
+sunday_inject_instance_recreate_fifo (SundayInjectInstance * self)
 {
-  frida_inject_instance_close_previous_fifo (self);
+  sunday_inject_instance_close_previous_fifo (self);
   self->previous_fifo = self->fifo;
   unlink (self->fifo_path);
   g_free (self->fifo_path);
 
-  frida_inject_instance_init_fifo (self);
+  sunday_inject_instance_init_fifo (self);
 }
 
-static FridaInjectInstance *
-frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
+static SundayInjectInstance *
+sunday_inject_instance_clone (const SundayInjectInstance * instance, guint id)
 {
-  FridaInjectInstance * clone;
+  SundayInjectInstance * clone;
 
-  clone = g_slice_dup (FridaInjectInstance, instance);
+  clone = g_slice_dup (SundayInjectInstance, instance);
   clone->id = id;
 
   clone->pid = 0;
@@ -774,7 +774,7 @@ frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
 
   clone->temp_path = g_strdup (instance->temp_path);
 
-  frida_inject_instance_init_fifo (clone);
+  sunday_inject_instance_init_fifo (clone);
   clone->previous_fifo = -1;
 
   g_object_ref (clone->binjector);
@@ -783,7 +783,7 @@ frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
 }
 
 static void
-frida_inject_instance_init_fifo (FridaInjectInstance * self)
+sunday_inject_instance_init_fifo (SundayInjectInstance * self)
 {
   const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
@@ -797,7 +797,7 @@ frida_inject_instance_init_fifo (FridaInjectInstance * self)
 }
 
 static void
-frida_inject_instance_close_previous_fifo (FridaInjectInstance * self)
+sunday_inject_instance_close_previous_fifo (SundayInjectInstance * self)
 {
   if (self->previous_fifo != -1)
   {
@@ -807,21 +807,21 @@ frida_inject_instance_close_previous_fifo (FridaInjectInstance * self)
 }
 
 static void
-frida_inject_instance_free (FridaInjectInstance * instance, FridaUnloadPolicy unload_policy)
+sunday_inject_instance_free (SundayInjectInstance * instance, SundayUnloadPolicy unload_policy)
 {
-  if (instance->pid != 0 && instance->remote_payload != 0 && unload_policy == FRIDA_UNLOAD_POLICY_IMMEDIATE && !instance->exec_pending)
+  if (instance->pid != 0 && instance->remote_payload != 0 && unload_policy == SUNDAY_UNLOAD_POLICY_IMMEDIATE && !instance->exec_pending)
   {
-    FridaRegs saved_regs;
+    SundayRegs saved_regs;
 
-    if (frida_inject_instance_did_not_exec (instance) &&
-        frida_inject_instance_attach (instance, &saved_regs, NULL))
+    if (sunday_inject_instance_did_not_exec (instance) &&
+        sunday_inject_instance_attach (instance, &saved_regs, NULL))
     {
-      frida_remote_dealloc (instance->pid, instance->remote_payload, instance->remote_size, &instance->api, NULL);
-      frida_inject_instance_detach (instance, &saved_regs, NULL);
+      sunday_remote_dealloc (instance->pid, instance->remote_payload, instance->remote_size, &instance->api, NULL);
+      sunday_inject_instance_detach (instance, &saved_regs, NULL);
     }
   }
 
-  frida_inject_instance_close_previous_fifo (instance);
+  sunday_inject_instance_close_previous_fifo (instance);
   close (instance->fifo);
   unlink (instance->fifo_path);
   g_free (instance->fifo_path);
@@ -832,11 +832,11 @@ frida_inject_instance_free (FridaInjectInstance * instance, FridaUnloadPolicy un
 
   g_object_unref (instance->binjector);
 
-  g_slice_free (FridaInjectInstance, instance);
+  g_slice_free (SundayInjectInstance, instance);
 }
 
 static gboolean
-frida_inject_instance_did_not_exec (FridaInjectInstance * self)
+sunday_inject_instance_did_not_exec (SundayInjectInstance * self)
 {
   gchar * executable_path;
   gboolean probably_did_not_exec;
@@ -853,7 +853,7 @@ frida_inject_instance_did_not_exec (FridaInjectInstance * self)
 }
 
 static gboolean
-frida_inject_instance_attach (FridaInjectInstance * self, FridaRegs * saved_regs, GError ** error)
+sunday_inject_instance_attach (SundayInjectInstance * self, SundayRegs * saved_regs, GError ** error)
 {
   const pid_t pid = self->pid;
   int ret;
@@ -867,8 +867,8 @@ frida_inject_instance_attach (FridaInjectInstance * self, FridaRegs * saved_regs
   maybe_already_attached = (ret != 0 && attach_errno == EBUSY);
   if (maybe_already_attached)
   {
-    ret = frida_get_regs (pid, saved_regs);
-    CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+    ret = sunday_get_regs (pid, saved_regs);
+    CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
     self->already_attached = TRUE;
   }
@@ -878,11 +878,11 @@ frida_inject_instance_attach (FridaInjectInstance * self, FridaRegs * saved_regs
 
     self->already_attached = FALSE;
 
-    success = frida_wait_for_attach_signal (pid);
+    success = sunday_wait_for_attach_signal (pid);
     if (!success)
       goto wait_failed;
 
-    ret = frida_get_regs (pid, saved_regs);
+    ret = sunday_get_regs (pid, saved_regs);
     if (ret != 0)
       goto wait_failed;
   }
@@ -894,8 +894,8 @@ os_failure:
     if (attach_errno == EPERM)
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_PERMISSION_DENIED,
+          SUNDAY_ERROR,
+          SUNDAY_ERROR_PERMISSION_DENIED,
           "Unable to access process with pid %u due to system restrictions;"
           " try running Frida as root",
           pid);
@@ -903,8 +903,8 @@ os_failure:
     else
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_NOT_SUPPORTED,
+          SUNDAY_ERROR,
+          SUNDAY_ERROR_NOT_SUPPORTED,
           "Unexpected error while attaching to process with pid %u (%s returned '%s')",
           pid, failed_operation, strerror (errno));
     }
@@ -916,8 +916,8 @@ wait_failed:
     ptrace (PT_DETACH, pid, NULL, 0);
 
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unexpected error while attaching to process with pid %u",
         pid);
 
@@ -926,19 +926,19 @@ wait_failed:
 }
 
 static gboolean
-frida_inject_instance_detach (FridaInjectInstance * self, const FridaRegs * saved_regs, GError ** error)
+sunday_inject_instance_detach (SundayInjectInstance * self, const SundayRegs * saved_regs, GError ** error)
 {
   const pid_t pid = self->pid;
   int ret;
   const gchar * failed_operation;
 
-  ret = frida_set_regs (pid, saved_regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_set_regs");
+  ret = sunday_set_regs (pid, saved_regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_set_regs");
 
   if (self->already_attached)
   {
     lwpid_t * interruptible_thread;
-    FridaSpawnInstance * spawn;
+    SundaySpawnInstance * spawn;
     struct ptrace_lwpinfo lwp_info;
     lwpid_t main_thread, threads[2], non_main_thread;
 
@@ -950,7 +950,7 @@ frida_inject_instance_detach (FridaInjectInstance * self, const FridaRegs * save
     }
     else
     {
-      FridaExecInstance * exec = gee_abstract_map_get (GEE_ABSTRACT_MAP (self->binjector->exec_instances), GUINT_TO_POINTER (pid));
+      SundayExecInstance * exec = gee_abstract_map_get (GEE_ABSTRACT_MAP (self->binjector->exec_instances), GUINT_TO_POINTER (pid));
       if (exec != NULL)
         interruptible_thread = &exec->interruptible_thread;
     }
@@ -983,8 +983,8 @@ frida_inject_instance_detach (FridaInjectInstance * self, const FridaRegs * save
 os_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_OPERATION,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_INVALID_OPERATION,
         "detach_from_process %s failed: %s",
         failed_operation, g_strerror (errno));
     return FALSE;
@@ -992,20 +992,20 @@ os_failure:
 }
 
 static gboolean
-frida_inject_instance_start_remote_thread (FridaInjectInstance * self, gboolean * exited, GError ** error)
+sunday_inject_instance_start_remote_thread (SundayInjectInstance * self, gboolean * exited, GError ** error)
 {
-  return frida_remote_exec (self->pid, self->entrypoint, self->stack_top, NULL, exited, error);
+  return sunday_remote_exec (self->pid, self->entrypoint, self->stack_top, NULL, exited, error);
 }
 
 static gboolean
-frida_inject_instance_emit_and_transfer_payload (FridaInjectEmitFunc func, const FridaInjectParams * params, GumAddress * entrypoint, GError ** error)
+sunday_inject_instance_emit_and_transfer_payload (SundayInjectEmitFunc func, const SundayInjectParams * params, GumAddress * entrypoint, GError ** error)
 {
   const pid_t pid = params->pid;
-  const FridaRemoteApi * api = &params->api;
+  const SundayRemoteApi * api = &params->api;
   gboolean success = FALSE;
   gpointer scratch_buffer;
-  FridaCodeChunk code;
-  FridaTrampolineData * data;
+  SundayCodeChunk code;
+  SundayTrampolineData * data;
   gchar * libthr_name;
 
   scratch_buffer = g_malloc0 (params->remote_size);
@@ -1015,8 +1015,8 @@ frida_inject_instance_emit_and_transfer_payload (FridaInjectEmitFunc func, const
 
   func (params, params->remote_address, &code);
 
-  data = (FridaTrampolineData *) (scratch_buffer + params->data.offset);
-  libthr_name = _frida_detect_libthr_name ();
+  data = (SundayTrampolineData *) (scratch_buffer + params->data.offset);
+  libthr_name = _sunday_detect_libthr_name ();
   strcpy (data->pthread_so_string, libthr_name);
   g_free (libthr_name);
   strcpy (data->pthread_create_string, "pthread_create");
@@ -1026,16 +1026,16 @@ frida_inject_instance_emit_and_transfer_payload (FridaInjectEmitFunc func, const
   strcpy (data->so_path, params->so_path);
   strcpy (data->entrypoint_name, params->entrypoint_name);
   strcpy (data->entrypoint_data, params->entrypoint_data);
-  data->hello_byte = FRIDA_PROGRESS_MESSAGE_TYPE_HELLO;
+  data->hello_byte = SUNDAY_PROGRESS_MESSAGE_TYPE_HELLO;
 
-  if (!frida_remote_write (pid, params->remote_address + params->code.offset, scratch_buffer + params->code.offset, code.size, error))
+  if (!sunday_remote_write (pid, params->remote_address + params->code.offset, scratch_buffer + params->code.offset, code.size, error))
     goto beach;
-  if (!frida_remote_write (pid, params->remote_address + params->data.offset, data, sizeof (FridaTrampolineData), error))
+  if (!sunday_remote_write (pid, params->remote_address + params->data.offset, data, sizeof (SundayTrampolineData), error))
     goto beach;
 
-  if (!frida_remote_mprotect (pid, params->remote_address + params->code.offset, params->code.size, PROT_READ | PROT_EXEC, api, error))
+  if (!sunday_remote_mprotect (pid, params->remote_address + params->code.offset, params->code.size, PROT_READ | PROT_EXEC, api, error))
     goto beach;
-  if (!frida_remote_mprotect (pid, params->remote_address + params->guard.offset, params->guard.size, PROT_NONE, api, error))
+  if (!sunday_remote_mprotect (pid, params->remote_address + params->guard.offset, params->guard.size, PROT_NONE, api, error))
     goto beach;
 
   *entrypoint = (params->remote_address + params->code.offset);
@@ -1064,9 +1064,9 @@ beach:
 #define EMIT_POP(reg) \
     gum_x86_writer_put_pop_reg (&cw, GUM_X86_##reg)
 #define EMIT_LOAD_FIELD(reg, field) \
-    gum_x86_writer_put_mov_reg_near_ptr (&cw, GUM_X86_##reg, FRIDA_REMOTE_DATA_FIELD (field))
+    gum_x86_writer_put_mov_reg_near_ptr (&cw, GUM_X86_##reg, SUNDAY_REMOTE_DATA_FIELD (field))
 #define EMIT_STORE_FIELD(field, reg) \
-    gum_x86_writer_put_mov_near_ptr_reg (&cw, FRIDA_REMOTE_DATA_FIELD (field), GUM_X86_##reg)
+    gum_x86_writer_put_mov_near_ptr_reg (&cw, SUNDAY_REMOTE_DATA_FIELD (field), GUM_X86_##reg)
 #define EMIT_LOAD_IMM(reg, value) \
     gum_x86_writer_put_mov_reg_address (&cw, GUM_X86_##reg, value)
 #define EMIT_LOAD_REG(dst, src, offset) \
@@ -1098,7 +1098,7 @@ beach:
     GUM_ARG_REGISTER, reg
 
 static void
-frida_inject_instance_commit_x86_code (GumX86Writer * cw, FridaCodeChunk * code)
+sunday_inject_instance_commit_x86_code (GumX86Writer * cw, SundayCodeChunk * code)
 {
   gum_x86_writer_flush (cw);
   code->cur = gum_x86_writer_cur (cw);
@@ -1106,9 +1106,9 @@ frida_inject_instance_commit_x86_code (GumX86Writer * cw, FridaCodeChunk * code)
 }
 
 static void
-frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAddress remote_address, FridaCodeChunk * code)
+sunday_inject_instance_emit_payload_code (const SundayInjectParams * params, GumAddress remote_address, SundayCodeChunk * code)
 {
-  const FridaRemoteApi * api = &params->api;
+  const SundayRemoteApi * api = &params->api;
   GumX86Writer cw;
   const guint worker_offset = 172;
   gssize fd_offset, unload_policy_offset, tid_offset;
@@ -1122,18 +1122,18 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
 
   EMIT_CALL_IMM (api->dlopen_impl,
       2,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_so_string)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_so_string)),
       ARG_IMM (RTLD_GLOBAL | RTLD_LAZY));
   EMIT_STORE_FIELD (pthread_so, XAX);
 
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (XAX),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_create_string)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_create_string)));
 
   EMIT_CALL_REG (XAX,
       4,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (worker_thread)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (worker_thread)),
       ARG_IMM (0),
       ARG_IMM (remote_address + worker_offset),
       ARG_IMM (0));
@@ -1143,7 +1143,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   g_assert (gum_x86_writer_offset (&cw) <= worker_offset);
   while (gum_x86_writer_offset (&cw) != worker_offset - code->size)
     gum_x86_writer_put_nop (&cw);
-  frida_inject_instance_commit_x86_code (&cw, code);
+  sunday_inject_instance_commit_x86_code (&cw, code);
   gum_x86_writer_clear (&cw);
 
   gum_x86_writer_init (&cw, code->cur);
@@ -1160,14 +1160,14 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
 
   EMIT_CALL_IMM (api->open_impl,
       2,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (fifo_path)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (fifo_path)),
       ARG_IMM (O_WRONLY | O_CLOEXEC));
   EMIT_STORE_REG (XBP, fd_offset, EAX);
 
   EMIT_CALL_IMM (api->write_impl,
       3,
       ARG_REG (EAX),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (hello_byte)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (hello_byte)),
       ARG_IMM (1));
 
   EMIT_LOAD_FIELD (XAX, module_handle);
@@ -1176,7 +1176,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   {
     EMIT_CALL_IMM (api->dlopen_impl,
         2,
-        ARG_IMM (FRIDA_REMOTE_DATA_FIELD (so_path)),
+        ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (so_path)),
         ARG_IMM (RTLD_LAZY));
     EMIT_STORE_FIELD (module_handle, XAX);
   }
@@ -1185,19 +1185,19 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (XAX),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (entrypoint_name)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (entrypoint_name)));
 
-  EMIT_STORE_IMM (XBP, unload_policy_offset, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  EMIT_STORE_IMM (XBP, unload_policy_offset, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
   EMIT_LEA (XCX, XBP, unload_policy_offset);
   EMIT_LEA (XDX, XBP, fd_offset);
   EMIT_CALL_REG (XAX,
       3,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (entrypoint_data)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (entrypoint_data)),
       ARG_REG (XCX),
       ARG_REG (XDX));
 
   EMIT_LOAD_REG (EAX, XBP, unload_policy_offset);
-  EMIT_CMP (EAX, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  EMIT_CMP (EAX, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
   EMIT_JNE (skip_dlclose);
   {
     EMIT_LOAD_FIELD (XAX, module_handle);
@@ -1208,14 +1208,14 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_LABEL (skip_dlclose);
 
   EMIT_LOAD_REG (EAX, XBP, unload_policy_offset);
-  EMIT_CMP (EAX, FRIDA_UNLOAD_POLICY_DEFERRED);
+  EMIT_CMP (EAX, SUNDAY_UNLOAD_POLICY_DEFERRED);
   EMIT_JE (skip_detach);
   {
     EMIT_LOAD_FIELD (XAX, pthread_so);
     EMIT_CALL_IMM (api->dlsym_impl,
         2,
         ARG_REG (XAX),
-        ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_detach_string)));
+        ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_detach_string)));
     EMIT_LOAD_FIELD (XCX, worker_thread);
     EMIT_CALL_REG (XAX,
         1,
@@ -1227,7 +1227,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (XAX),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_getthreadid_np_string)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_getthreadid_np_string)));
   gum_x86_writer_put_call_reg (&cw, GUM_X86_XAX);
   EMIT_STORE_REG (XBP, tid_offset, EAX);
 
@@ -1264,7 +1264,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_POP (XBP);
   EMIT_RET ();
 
-  frida_inject_instance_commit_x86_code (&cw, code);
+  sunday_inject_instance_commit_x86_code (&cw, code);
   gum_x86_writer_clear (&cw);
 }
 
@@ -1279,9 +1279,9 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
 #define EMIT_POP(a, b) \
     gum_arm64_writer_put_pop_reg_reg (&cw, ARM64_REG_##a, ARM64_REG_##b)
 #define EMIT_LOAD_FIELD(reg, field) \
-    gum_arm64_writer_put_ldr_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaTrampolineData, field))
+    gum_arm64_writer_put_ldr_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (SundayTrampolineData, field))
 #define EMIT_STORE_FIELD(field, reg) \
-    gum_arm64_writer_put_str_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaTrampolineData, field))
+    gum_arm64_writer_put_str_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (SundayTrampolineData, field))
 #define EMIT_LDR(dst, src, offset) \
     gum_arm64_writer_put_ldr_reg_reg_offset (&cw, ARM64_REG_##dst, ARM64_REG_##src, offset)
 #define EMIT_LDR_ADDRESS(reg, value) \
@@ -1307,7 +1307,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
     GUM_ARG_REGISTER, ARM64_REG_##reg
 
 static void
-frida_inject_instance_commit_arm64_code (GumArm64Writer * cw, FridaCodeChunk * code)
+sunday_inject_instance_commit_arm64_code (GumArm64Writer * cw, SundayCodeChunk * code)
 {
   gum_arm64_writer_flush (cw);
   code->cur = gum_arm64_writer_cur (cw);
@@ -1315,9 +1315,9 @@ frida_inject_instance_commit_arm64_code (GumArm64Writer * cw, FridaCodeChunk * c
 }
 
 static void
-frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAddress remote_address, FridaCodeChunk * code)
+sunday_inject_instance_emit_payload_code (const SundayInjectParams * params, GumAddress remote_address, SundayCodeChunk * code)
 {
-  const FridaRemoteApi * api = &params->api;
+  const SundayRemoteApi * api = &params->api;
   GumArm64Writer cw;
   const guint worker_offset = 128;
   const gchar * skip_dlopen = "skip_dlopen";
@@ -1331,19 +1331,19 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
 
   EMIT_CALL_IMM (api->dlopen_impl,
       2,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_so_string)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_so_string)),
       ARG_IMM (RTLD_GLOBAL | RTLD_LAZY));
   EMIT_STORE_FIELD (pthread_so, X0);
 
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (X0),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_create_string)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_create_string)));
   EMIT_MOVE (X5, X0);
 
   EMIT_CALL_REG (X5,
       4,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (worker_thread)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (worker_thread)),
       ARG_IMM (0),
       ARG_IMM (remote_address + worker_offset),
       ARG_IMM (remote_address + params->data.offset));
@@ -1353,7 +1353,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   g_assert (gum_arm64_writer_offset (&cw) <= worker_offset);
   while (gum_arm64_writer_offset (&cw) != worker_offset - code->size)
     gum_arm64_writer_put_nop (&cw);
-  frida_inject_instance_commit_arm64_code (&cw, code);
+  sunday_inject_instance_commit_arm64_code (&cw, code);
   gum_arm64_writer_clear (&cw);
 
   gum_arm64_writer_init (&cw, code->cur);
@@ -1369,14 +1369,14 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
 
   EMIT_CALL_IMM (api->open_impl,
       2,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (fifo_path)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (fifo_path)),
       ARG_IMM (O_WRONLY | O_CLOEXEC));
   EMIT_MOVE (W21, W0);
 
   EMIT_CALL_IMM (api->write_impl,
       3,
       ARG_REG (W21),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (hello_byte)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (hello_byte)),
       ARG_IMM (1));
 
   EMIT_LOAD_FIELD (X19, module_handle);
@@ -1384,7 +1384,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   {
     EMIT_CALL_IMM (api->dlopen_impl,
         2,
-        ARG_IMM (FRIDA_REMOTE_DATA_FIELD (so_path)),
+        ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (so_path)),
         ARG_IMM (RTLD_LAZY));
     EMIT_MOVE (X19, X0);
     EMIT_STORE_FIELD (module_handle, X19);
@@ -1394,23 +1394,23 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (X19),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (entrypoint_name)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (entrypoint_name)));
   EMIT_MOVE (X5, X0);
 
-  EMIT_LDR_U64 (X0, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  EMIT_LDR_U64 (X0, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
   EMIT_PUSH (X0, X21);
   EMIT_MOVE (X1, SP);
   EMIT_ADD (X2, SP, 8);
   EMIT_CALL_REG (X5,
       3,
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (entrypoint_data)),
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (entrypoint_data)),
       ARG_REG (X1),
       ARG_REG (X2));
 
   EMIT_LDR (W21, SP, 8);
   EMIT_LDR (W22, SP, 0);
 
-  EMIT_LDR_U64 (X1, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  EMIT_LDR_U64 (X1, SUNDAY_UNLOAD_POLICY_IMMEDIATE);
   EMIT_CMP (W22, W1);
   EMIT_B_COND (NE, skip_dlclose);
   {
@@ -1420,7 +1420,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   }
   EMIT_LABEL (skip_dlclose);
 
-  EMIT_LDR_U64 (X1, FRIDA_UNLOAD_POLICY_DEFERRED);
+  EMIT_LDR_U64 (X1, SUNDAY_UNLOAD_POLICY_DEFERRED);
   EMIT_CMP (W22, W1);
   EMIT_B_COND (EQ, skip_detach);
   {
@@ -1428,7 +1428,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
     EMIT_CALL_IMM (api->dlsym_impl,
         2,
         ARG_REG (X0),
-        ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_detach_string)));
+        ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_detach_string)));
     EMIT_MOVE (X5, X0);
     EMIT_LOAD_FIELD (X0, worker_thread);
     EMIT_CALL_REG (X5,
@@ -1441,7 +1441,7 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_CALL_IMM (api->dlsym_impl,
       2,
       ARG_REG (X0),
-      ARG_IMM (FRIDA_REMOTE_DATA_FIELD (pthread_getthreadid_np_string)));
+      ARG_IMM (SUNDAY_REMOTE_DATA_FIELD (pthread_getthreadid_np_string)));
   gum_arm64_writer_put_blr_reg (&cw, ARM64_REG_X0);
   EMIT_MOVE (W23, W0);
 
@@ -1478,14 +1478,14 @@ frida_inject_instance_emit_payload_code (const FridaInjectParams * params, GumAd
   EMIT_POP (FP, LR);
   EMIT_RET ();
 
-  frida_inject_instance_commit_arm64_code (&cw, code);
+  sunday_inject_instance_commit_arm64_code (&cw, code);
   gum_arm64_writer_clear (&cw);
 }
 
 #endif
 
 static gboolean
-frida_wait_for_attach_signal (pid_t pid)
+sunday_wait_for_attach_signal (pid_t pid)
 {
   int status = 0;
   pid_t res;
@@ -1501,7 +1501,7 @@ frida_wait_for_attach_signal (pid_t pid)
     case SIGTRAP:
       if (ptrace (PT_CONTINUE, pid, GSIZE_TO_POINTER (1), 0) != 0)
         return FALSE;
-      if (!frida_wait_for_child_signal (pid, SIGSTOP, NULL))
+      if (!sunday_wait_for_child_signal (pid, SIGSTOP, NULL))
         return FALSE;
       /* fall through */
     case SIGSTOP:
@@ -1514,7 +1514,7 @@ frida_wait_for_attach_signal (pid_t pid)
 }
 
 static gboolean
-frida_wait_for_child_signal (pid_t pid, int signal, gboolean * exited)
+sunday_wait_for_child_signal (pid_t pid, int signal, gboolean * exited)
 {
   gboolean success = FALSE;
   gboolean child_did_exit = TRUE;
@@ -1557,19 +1557,19 @@ beach:
 }
 
 static gint
-frida_get_regs (pid_t pid, FridaRegs * regs)
+sunday_get_regs (pid_t pid, SundayRegs * regs)
 {
   return ptrace (PT_GETREGS, pid, (caddr_t) regs, 0);
 }
 
 static gint
-frida_set_regs (pid_t pid, const FridaRegs * regs)
+sunday_set_regs (pid_t pid, const SundayRegs * regs)
 {
   return ptrace (PT_SETREGS, pid, (caddr_t) regs, 0);
 }
 
 static gboolean
-frida_run_to_entrypoint (pid_t pid, GError ** error)
+sunday_run_to_entrypoint (pid_t pid, GError ** error)
 {
   GumAddress entrypoint;
 #if defined (HAVE_I386)
@@ -1584,29 +1584,29 @@ frida_run_to_entrypoint (pid_t pid, GError ** error)
   int ret;
   const gchar * failed_operation;
   gboolean success;
-  FridaRegs regs;
+  SundayRegs regs;
 
-  entrypoint = _frida_find_entrypoint (pid, error);
+  entrypoint = _sunday_find_entrypoint (pid, error);
   if (entrypoint == 0)
     goto propagate_error;
 
-  if (!frida_remote_read (pid, entrypoint, &original_entry_insn, sizeof (original_entry_insn), error))
+  if (!sunday_remote_read (pid, entrypoint, &original_entry_insn, sizeof (original_entry_insn), error))
     goto propagate_error;
 
-  if (!frida_remote_write (pid, entrypoint, &patched_entry_insn, sizeof (patched_entry_insn), error))
+  if (!sunday_remote_write (pid, entrypoint, &patched_entry_insn, sizeof (patched_entry_insn), error))
     goto propagate_error;
 
   ret = ptrace (PT_CONTINUE, pid, GSIZE_TO_POINTER (1), 0);
   CHECK_OS_RESULT (ret, ==, 0, "PT_CONTINUE");
 
-  success = frida_wait_for_child_signal (pid, SIGTRAP, NULL);
+  success = sunday_wait_for_child_signal (pid, SIGTRAP, NULL);
   CHECK_OS_RESULT (success, !=, FALSE, "WAIT(SIGTRAP)");
 
-  if (!frida_remote_write (pid, entrypoint, &original_entry_insn, sizeof (original_entry_insn), error))
+  if (!sunday_remote_write (pid, entrypoint, &original_entry_insn, sizeof (original_entry_insn), error))
     goto propagate_error;
 
-  ret = frida_get_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+  ret = sunday_get_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
 #if defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 4
   regs.r_eip = entrypoint;
@@ -1618,8 +1618,8 @@ frida_run_to_entrypoint (pid_t pid, GError ** error)
 # error Unsupported architecture
 #endif
 
-  ret = frida_set_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_set_regs");
+  ret = sunday_set_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_set_regs");
 
   return TRUE;
 
@@ -1630,8 +1630,8 @@ propagate_error:
 os_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "%s failed: %s",
         failed_operation, g_strerror (errno));
     return FALSE;
@@ -1639,31 +1639,31 @@ os_failure:
 }
 
 static gboolean
-frida_remote_api_try_init (FridaRemoteApi * api, pid_t pid)
+sunday_remote_api_try_init (SundayRemoteApi * api, pid_t pid)
 {
   gboolean success = FALSE;
-  FridaSymbolResolver * resolver;
+  SundaySymbolResolver * resolver;
 
-  resolver = frida_symbol_resolver_new (pid);
+  resolver = sunday_symbol_resolver_new (pid);
 
-#define FRIDA_TRY_RESOLVE(kind, name) \
-    api->name##_impl = frida_symbol_resolver_find_##kind##_function (resolver, G_STRINGIFY (name)); \
+#define SUNDAY_TRY_RESOLVE(kind, name) \
+    api->name##_impl = sunday_symbol_resolver_find_##kind##_function (resolver, G_STRINGIFY (name)); \
     if (api->name##_impl == 0) \
       goto beach
 
-  FRIDA_TRY_RESOLVE (ld, dlopen);
-  FRIDA_TRY_RESOLVE (ld, dlclose);
-  FRIDA_TRY_RESOLVE (ld, dlsym);
+  SUNDAY_TRY_RESOLVE (ld, dlopen);
+  SUNDAY_TRY_RESOLVE (ld, dlclose);
+  SUNDAY_TRY_RESOLVE (ld, dlsym);
 
-  FRIDA_TRY_RESOLVE (libc, mmap);
-  FRIDA_TRY_RESOLVE (libc, munmap);
-  FRIDA_TRY_RESOLVE (libc, mprotect);
+  SUNDAY_TRY_RESOLVE (libc, mmap);
+  SUNDAY_TRY_RESOLVE (libc, munmap);
+  SUNDAY_TRY_RESOLVE (libc, mprotect);
 
-  FRIDA_TRY_RESOLVE (libc, open);
-  FRIDA_TRY_RESOLVE (libc, close);
-  FRIDA_TRY_RESOLVE (libc, write);
+  SUNDAY_TRY_RESOLVE (libc, open);
+  SUNDAY_TRY_RESOLVE (libc, close);
+  SUNDAY_TRY_RESOLVE (libc, write);
 
-#undef FRIDA_TRY_RESOLVE
+#undef SUNDAY_TRY_RESOLVE
 
   success = TRUE;
   goto beach;
@@ -1677,7 +1677,7 @@ beach:
 }
 
 static GumAddress
-frida_remote_alloc (pid_t pid, size_t size, int prot, const FridaRemoteApi * api, GError ** error)
+sunday_remote_alloc (pid_t pid, size_t size, int prot, const SundayRemoteApi * api, GError ** error)
 {
   GumAddress args[] = {
     0,
@@ -1689,10 +1689,10 @@ frida_remote_alloc (pid_t pid, size_t size, int prot, const FridaRemoteApi * api
   };
   GumAddress retval;
 
-  if (!frida_remote_call (pid, api->mmap_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
+  if (!sunday_remote_call (pid, api->mmap_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
     return 0;
 
-  if (retval == FRIDA_MAP_FAILED)
+  if (retval == SUNDAY_MAP_FAILED)
     goto mmap_failed;
 
   return retval;
@@ -1700,8 +1700,8 @@ frida_remote_alloc (pid_t pid, size_t size, int prot, const FridaRemoteApi * api
 mmap_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unable to allocate memory in the specified process");
     goto failure;
   }
@@ -1712,7 +1712,7 @@ failure:
 }
 
 static gboolean
-frida_remote_dealloc (pid_t pid, GumAddress address, size_t size, const FridaRemoteApi * api, GError ** error)
+sunday_remote_dealloc (pid_t pid, GumAddress address, size_t size, const SundayRemoteApi * api, GError ** error)
 {
   GumAddress args[] = {
     address,
@@ -1720,14 +1720,14 @@ frida_remote_dealloc (pid_t pid, GumAddress address, size_t size, const FridaRem
   };
   GumAddress retval;
 
-  if (!frida_remote_call (pid, api->munmap_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
+  if (!sunday_remote_call (pid, api->munmap_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
     return FALSE;
 
   return retval == 0;
 }
 
 static gboolean
-frida_remote_mprotect (pid_t pid, GumAddress address, size_t size, int prot, const FridaRemoteApi * api, GError ** error)
+sunday_remote_mprotect (pid_t pid, GumAddress address, size_t size, int prot, const SundayRemoteApi * api, GError ** error)
 {
   GumAddress args[] = {
     address,
@@ -1736,14 +1736,14 @@ frida_remote_mprotect (pid_t pid, GumAddress address, size_t size, int prot, con
   };
   GumAddress retval;
 
-  if (!frida_remote_call (pid, api->mprotect_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
+  if (!sunday_remote_call (pid, api->mprotect_impl, args, G_N_ELEMENTS (args), &retval, NULL, error))
     return FALSE;
 
   return retval == 0;
 }
 
 static gboolean
-frida_remote_read (pid_t pid, GumAddress remote_address, gpointer data, gsize size, GError ** error)
+sunday_remote_read (pid_t pid, GumAddress remote_address, gpointer data, gsize size, GError ** error)
 {
   struct ptrace_io_desc d;
 
@@ -1760,8 +1760,8 @@ frida_remote_read (pid_t pid, GumAddress remote_address, gpointer data, gsize si
 failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "remote_read failed: %s",
         strerror (errno));
     return FALSE;
@@ -1769,7 +1769,7 @@ failure:
 }
 
 static gboolean
-frida_remote_write (pid_t pid, GumAddress remote_address, gconstpointer data, gsize size, GError ** error)
+sunday_remote_write (pid_t pid, GumAddress remote_address, gconstpointer data, gsize size, GError ** error)
 {
   struct ptrace_io_desc d;
 
@@ -1786,8 +1786,8 @@ frida_remote_write (pid_t pid, GumAddress remote_address, gconstpointer data, gs
 failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "remote_write failed: %s",
         strerror (errno));
     return FALSE;
@@ -1795,21 +1795,21 @@ failure:
 }
 
 static gboolean
-frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint args_length, GumAddress * retval, gboolean * exited,
+sunday_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint args_length, GumAddress * retval, gboolean * exited,
     GError ** error)
 {
   int ret;
   const gchar * failed_operation;
-  FridaRegs regs;
+  SundayRegs regs;
   gint i;
   gboolean success;
 
-  ret = frida_get_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+  ret = sunday_get_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
 #if defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 4
-  regs.r_esp -= FRIDA_RED_ZONE_SIZE;
-  regs.r_esp -= (regs.r_esp - (args_length * 4)) % FRIDA_STACK_ALIGNMENT;
+  regs.r_esp -= SUNDAY_RED_ZONE_SIZE;
+  regs.r_esp -= (regs.r_esp - (args_length * 4)) % SUNDAY_STACK_ALIGNMENT;
 
   regs.r_eip = func;
 
@@ -1822,20 +1822,20 @@ frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint arg
       stack_args[i] = args[i];
 
     regs.r_esp -= args_length * sizeof (guintptr);
-    if (!frida_remote_write (pid, regs.r_esp, stack_args, args_length * sizeof (guintptr), error))
+    if (!sunday_remote_write (pid, regs.r_esp, stack_args, args_length * sizeof (guintptr), error))
       goto propagate_error;
   }
 
   {
-    guintptr dummy_return_address = FRIDA_DUMMY_RETURN_ADDRESS;
+    guintptr dummy_return_address = SUNDAY_DUMMY_RETURN_ADDRESS;
 
     regs.r_esp -= 4;
-    if (!frida_remote_write (pid, regs.r_esp, &dummy_return_address, sizeof (dummy_return_address), error))
+    if (!sunday_remote_write (pid, regs.r_esp, &dummy_return_address, sizeof (dummy_return_address), error))
       goto propagate_error;
   }
 #elif defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 8
-  regs.r_rsp -= FRIDA_RED_ZONE_SIZE;
-  regs.r_rsp -= (regs.r_rsp - (MAX (args_length - 6, 0) * 8)) % FRIDA_STACK_ALIGNMENT;
+  regs.r_rsp -= SUNDAY_RED_ZONE_SIZE;
+  regs.r_rsp -= (regs.r_rsp - (MAX (args_length - 6, 0) * 8)) % SUNDAY_STACK_ALIGNMENT;
 
   regs.r_rip = func;
 
@@ -1877,20 +1877,20 @@ frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint arg
         stack_args[i] = args[6 + i];
 
       regs.r_rsp -= num_stack_args * sizeof (guintptr);
-      if (!frida_remote_write (pid, regs.r_rsp, stack_args, num_stack_args * sizeof (guintptr), error))
+      if (!sunday_remote_write (pid, regs.r_rsp, stack_args, num_stack_args * sizeof (guintptr), error))
         goto propagate_error;
     }
   }
 
   {
-    guintptr dummy_return_address = FRIDA_DUMMY_RETURN_ADDRESS;
+    guintptr dummy_return_address = SUNDAY_DUMMY_RETURN_ADDRESS;
 
     regs.r_rsp -= 8;
-    if (!frida_remote_write (pid, regs.r_rsp, &dummy_return_address, sizeof (dummy_return_address), error))
+    if (!sunday_remote_write (pid, regs.r_rsp, &dummy_return_address, sizeof (dummy_return_address), error))
       goto propagate_error;
   }
 #elif defined (HAVE_ARM64)
-  regs.sp -= regs.sp % FRIDA_STACK_ALIGNMENT;
+  regs.sp -= regs.sp % SUNDAY_STACK_ALIGNMENT;
 
   regs.elr = func;
 
@@ -1898,22 +1898,22 @@ frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint arg
   for (i = 0; i != args_length; i++)
     regs.x[i] = args[i];
 
-  regs.lr = FRIDA_DUMMY_RETURN_ADDRESS;
+  regs.lr = SUNDAY_DUMMY_RETURN_ADDRESS;
 #else
 # error Unsupported architecture
 #endif
 
-  ret = frida_set_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_set_regs");
+  ret = sunday_set_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_set_regs");
 
   ret = ptrace (PT_CONTINUE, pid, GSIZE_TO_POINTER (1), 0);
   CHECK_OS_RESULT (ret, ==, 0, "PT_CONTINUE");
 
-  success = frida_wait_for_child_signal (pid, SIGSEGV, exited);
+  success = sunday_wait_for_child_signal (pid, SIGSEGV, exited);
   CHECK_OS_RESULT (success, !=, FALSE, "PT_CONTINUE wait");
 
-  ret = frida_get_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+  ret = sunday_get_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
 #if defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 4
   *retval = regs.r_eax;
@@ -1930,8 +1930,8 @@ frida_remote_call (pid_t pid, GumAddress func, const GumAddress * args, gint arg
 os_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "remote_call %s failed: %s",
         failed_operation, g_strerror (errno));
     return FALSE;
@@ -1945,15 +1945,15 @@ propagate_error:
 }
 
 static gboolean
-frida_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack, GumAddress * result, gboolean * exited, GError ** error)
+sunday_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack, GumAddress * result, gboolean * exited, GError ** error)
 {
   int ret;
   const gchar * failed_operation;
-  FridaRegs regs;
+  SundayRegs regs;
   gboolean success;
 
-  ret = frida_get_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+  ret = sunday_get_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
 #if defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 4
   regs.r_eip = remote_address;
@@ -1968,19 +1968,19 @@ frida_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack
 # error Unsupported architecture
 #endif
 
-  ret = frida_set_regs (pid, &regs);
-  CHECK_OS_RESULT (ret, ==, 0, "frida_set_regs");
+  ret = sunday_set_regs (pid, &regs);
+  CHECK_OS_RESULT (ret, ==, 0, "sunday_set_regs");
 
   ret = ptrace (PT_CONTINUE, pid, GSIZE_TO_POINTER (1), 0);
   CHECK_OS_RESULT (ret, ==, 0, "PT_CONTINUE");
 
-  success = frida_wait_for_child_signal (pid, SIGTRAP, exited);
+  success = sunday_wait_for_child_signal (pid, SIGTRAP, exited);
   CHECK_OS_RESULT (success, !=, FALSE, "PT_CONTINUE wait");
 
   if (result != NULL)
   {
-    ret = frida_get_regs (pid, &regs);
-    CHECK_OS_RESULT (ret, ==, 0, "frida_get_regs");
+    ret = sunday_get_regs (pid, &regs);
+    CHECK_OS_RESULT (ret, ==, 0, "sunday_get_regs");
 
 #if defined (HAVE_I386) && GLIB_SIZEOF_VOID_P == 4
     *result = regs.r_eax;
@@ -1998,8 +1998,8 @@ frida_remote_exec (pid_t pid, GumAddress remote_address, GumAddress remote_stack
 os_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "remote_exec %s failed: %s",
         failed_operation, g_strerror (errno));
     return FALSE;

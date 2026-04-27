@@ -7,7 +7,7 @@
 #include <mach/mach.h>
 #include <unistd.h>
 
-#define FRIDA_TRUST_CACHE_INJECT_PATH "/usr/bin/inject"
+#define SUNDAY_TRUST_CACHE_INJECT_PATH "/usr/bin/inject"
 
 #ifndef MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT
 # define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT 6
@@ -18,25 +18,25 @@
 
 extern int memorystatus_control (uint32_t command, int32_t pid, uint32_t flags, void * buffer, size_t buffer_size);
 
-static gboolean frida_is_platformized (void);
-static gboolean frida_try_platformize (const gchar * path);
+static gboolean sunday_is_platformized (void);
+static gboolean sunday_try_platformize (const gchar * path);
 
-static gchar * frida_get_executable_path (void);
-static gboolean frida_refresh_inode (const gchar * path);
-static gboolean frida_add_to_trust_cache (const gchar * path);
+static gchar * sunday_get_executable_path (void);
+static gboolean sunday_refresh_inode (const gchar * path);
+static gboolean sunday_add_to_trust_cache (const gchar * path);
 
 void
-_frida_server_ios_tvos_configure (void)
+_sunday_server_ios_tvos_configure (void)
 {
   memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
 
-  if (!frida_is_platformized ())
+  if (!sunday_is_platformized ())
   {
     gchar * server_path;
 
-    server_path = frida_get_executable_path ();
+    server_path = sunday_get_executable_path ();
 
-    if (frida_try_platformize (server_path))
+    if (sunday_try_platformize (server_path))
     {
       g_print (
           "***\n"
@@ -52,7 +52,7 @@ _frida_server_ios_tvos_configure (void)
 }
 
 static gboolean
-frida_is_platformized (void)
+sunday_is_platformized (void)
 {
   gboolean result;
   gboolean system_has_guarded_ports;
@@ -88,19 +88,19 @@ frida_is_platformized (void)
 }
 
 static gboolean
-frida_try_platformize (const gchar * path)
+sunday_try_platformize (const gchar * path)
 {
-  if (!frida_add_to_trust_cache (path))
+  if (!sunday_add_to_trust_cache (path))
     return FALSE;
 
-  if (!frida_refresh_inode (path))
+  if (!sunday_refresh_inode (path))
     return FALSE;
 
   return TRUE;
 }
 
 static gchar *
-frida_get_executable_path (void)
+sunday_get_executable_path (void)
 {
   uint32_t buf_size;
   gchar * buf;
@@ -119,7 +119,7 @@ frida_get_executable_path (void)
 }
 
 static gboolean
-frida_refresh_inode (const gchar * path)
+sunday_refresh_inode (const gchar * path)
 {
   gboolean success = FALSE;
   int (* clonefile) (const char * src, const char * dst, int flags);
@@ -151,17 +151,17 @@ beach:
 }
 
 static gboolean
-frida_add_to_trust_cache (const gchar * path)
+sunday_add_to_trust_cache (const gchar * path)
 {
   GSubprocess * process;
   GError * error;
 
-  if (!g_file_test (FRIDA_TRUST_CACHE_INJECT_PATH, G_FILE_TEST_EXISTS))
+  if (!g_file_test (SUNDAY_TRUST_CACHE_INJECT_PATH, G_FILE_TEST_EXISTS))
     return FALSE;
 
   error = NULL;
   process = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_SILENCE,
-      &error, FRIDA_TRUST_CACHE_INJECT_PATH, path, NULL);
+      &error, SUNDAY_TRUST_CACHE_INJECT_PATH, path, NULL);
 
   if (error != NULL)
     goto inject_failed;

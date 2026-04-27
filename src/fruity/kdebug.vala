@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	public enum KdebugClass {
 		MACH = 1,
 		FSYSTEM = 3,

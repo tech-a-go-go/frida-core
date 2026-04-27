@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public interface LinuxHelper : Object {
 		public signal void output (uint pid, int fd, uint8[] data);
 		public signal void uninjected (uint id);
@@ -42,7 +42,7 @@ namespace Frida {
 		CONTROL_CHANNEL,
 	}
 
-	[DBus (name = "re.frida.Helper")]
+	[DBus (name = "re.sunday.Helper")]
 	public interface LinuxRemoteHelper : Object {
 		public signal void output (uint pid, int fd, uint8[] data);
 		public signal void uninjected (uint id);

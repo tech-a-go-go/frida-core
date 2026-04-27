@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public extern void libc_shim_prepare_to_deinit ();
 #if DARWIN
 	public extern void libc_shim_deinit ();

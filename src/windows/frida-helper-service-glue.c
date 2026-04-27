@@ -3,18 +3,18 @@
 #include <windows.h>
 
 #if defined (HAVE_ARM64)
-# define FRIDA_HELPER_SERVICE_ARCH "arm64"
+# define SUNDAY_HELPER_SERVICE_ARCH "arm64"
 #elif GLIB_SIZEOF_VOID_P == 8
-# define FRIDA_HELPER_SERVICE_ARCH "x86_64"
+# define SUNDAY_HELPER_SERVICE_ARCH "x86_64"
 #else
-# define FRIDA_HELPER_SERVICE_ARCH "x86"
+# define SUNDAY_HELPER_SERVICE_ARCH "x86"
 #endif
 
 #define STANDALONE_JOIN_TIMEOUT_MSEC (5 * 1000)
 
-typedef struct _FridaServiceContext FridaServiceContext;
+typedef struct _SundayServiceContext SundayServiceContext;
 
-struct _FridaServiceContext
+struct _SundayServiceContext
 {
   gchar * service_basename;
 
@@ -24,55 +24,55 @@ struct _FridaServiceContext
   GQueue standalone_services;
 };
 
-static void WINAPI frida_managed_helper_service_main (DWORD argc, WCHAR ** argv);
-static DWORD WINAPI frida_managed_helper_service_handle_control_code (DWORD control, DWORD event_type, void * event_data, void * context);
-static void frida_managed_helper_service_report_status (DWORD current_state, DWORD exit_code, DWORD wait_hint);
+static void WINAPI sunday_managed_helper_service_main (DWORD argc, WCHAR ** argv);
+static DWORD WINAPI sunday_managed_helper_service_handle_control_code (DWORD control, DWORD event_type, void * event_data, void * context);
+static void sunday_managed_helper_service_report_status (DWORD current_state, DWORD exit_code, DWORD wait_hint);
 
-static gboolean frida_register_and_start_services (FridaServiceContext * self, gchar ** archs, gint archs_length);
-static void frida_stop_and_unregister_services (FridaServiceContext * self);
-static gboolean frida_spawn_standalone_services (FridaServiceContext * self, gchar ** archs, gint archs_length);
-static gboolean frida_join_standalone_services (FridaServiceContext * self);
-static void frida_kill_standalone_services (FridaServiceContext * self);
-static void frida_release_standalone_services (FridaServiceContext * self);
+static gboolean sunday_register_and_start_services (SundayServiceContext * self, gchar ** archs, gint archs_length);
+static void sunday_stop_and_unregister_services (SundayServiceContext * self);
+static gboolean sunday_spawn_standalone_services (SundayServiceContext * self, gchar ** archs, gint archs_length);
+static gboolean sunday_join_standalone_services (SundayServiceContext * self);
+static void sunday_kill_standalone_services (SundayServiceContext * self);
+static void sunday_release_standalone_services (SundayServiceContext * self);
 
-static gboolean frida_register_services (FridaServiceContext * self, gchar ** archs, gint archs_length);
-static gboolean frida_unregister_services (FridaServiceContext * self);
-static gboolean frida_start_services (FridaServiceContext * self);
-static gboolean frida_stop_services (FridaServiceContext * self);
+static gboolean sunday_register_services (SundayServiceContext * self, gchar ** archs, gint archs_length);
+static gboolean sunday_unregister_services (SundayServiceContext * self);
+static gboolean sunday_start_services (SundayServiceContext * self);
+static gboolean sunday_stop_services (SundayServiceContext * self);
 
-static SC_HANDLE frida_register_service (FridaServiceContext * self, const gchar * suffix);
-static gboolean frida_unregister_service (FridaServiceContext * self, SC_HANDLE handle);
-static void frida_unregister_stale_services (FridaServiceContext * self);
-static gboolean frida_start_service (FridaServiceContext * self, SC_HANDLE handle);
-static gboolean frida_stop_service (FridaServiceContext * self, SC_HANDLE handle);
+static SC_HANDLE sunday_register_service (SundayServiceContext * self, const gchar * suffix);
+static gboolean sunday_unregister_service (SundayServiceContext * self, SC_HANDLE handle);
+static void sunday_unregister_stale_services (SundayServiceContext * self);
+static gboolean sunday_start_service (SundayServiceContext * self, SC_HANDLE handle);
+static gboolean sunday_stop_service (SundayServiceContext * self, SC_HANDLE handle);
 
-static HANDLE frida_spawn_standalone_service (FridaServiceContext * self, const gchar * suffix);
-static gboolean frida_join_standalone_service (FridaServiceContext * self, HANDLE handle);
-static void frida_kill_standalone_service (FridaServiceContext * self, HANDLE handle);
+static HANDLE sunday_spawn_standalone_service (SundayServiceContext * self, const gchar * suffix);
+static gboolean sunday_join_standalone_service (SundayServiceContext * self, HANDLE handle);
+static void sunday_kill_standalone_service (SundayServiceContext * self, HANDLE handle);
 
-static FridaServiceContext * frida_service_context_new (const gchar * service_basename);
-static void frida_service_context_free (FridaServiceContext * self);
+static SundayServiceContext * sunday_service_context_new (const gchar * service_basename);
+static void sunday_service_context_free (SundayServiceContext * self);
 
-static void frida_rmtree (GFile * file);
+static void sunday_rmtree (GFile * file);
 
-static WCHAR * frida_managed_helper_service_name = NULL;
-static SERVICE_STATUS_HANDLE frida_managed_helper_service_status_handle = NULL;
+static WCHAR * sunday_managed_helper_service_name = NULL;
+static SERVICE_STATUS_HANDLE sunday_managed_helper_service_status_handle = NULL;
 
 void *
-frida_helper_manager_start_services (const char * service_basename, gchar ** archs, gint archs_length, FridaPrivilegeLevel level)
+sunday_helper_manager_start_services (const char * service_basename, gchar ** archs, gint archs_length, SundayPrivilegeLevel level)
 {
-  FridaServiceContext * self;
+  SundayServiceContext * self;
 
-  self = frida_service_context_new (service_basename);
+  self = sunday_service_context_new (service_basename);
 
-  self->scm = (level == FRIDA_PRIVILEGE_LEVEL_ELEVATED)
+  self->scm = (level == SUNDAY_PRIVILEGE_LEVEL_ELEVATED)
       ? OpenSCManager (NULL, NULL, SC_MANAGER_ALL_ACCESS)
       : NULL;
   if (self->scm != NULL)
   {
-    frida_unregister_stale_services (self);
+    sunday_unregister_stale_services (self);
 
-    if (!frida_register_and_start_services (self, archs, archs_length))
+    if (!sunday_register_and_start_services (self, archs, archs_length))
     {
       CloseServiceHandle (self->scm);
       self->scm = NULL;
@@ -81,9 +81,9 @@ frida_helper_manager_start_services (const char * service_basename, gchar ** arc
 
   if (self->scm == NULL)
   {
-    if (!frida_spawn_standalone_services (self, archs, archs_length))
+    if (!sunday_spawn_standalone_services (self, archs, archs_length))
     {
-      frida_service_context_free (self);
+      sunday_service_context_free (self);
       self = NULL;
     }
   }
@@ -92,25 +92,25 @@ frida_helper_manager_start_services (const char * service_basename, gchar ** arc
 }
 
 void
-frida_helper_manager_stop_services (void * context)
+sunday_helper_manager_stop_services (void * context)
 {
-  FridaServiceContext * self = context;
+  SundayServiceContext * self = context;
 
   if (self->scm != NULL)
   {
-    frida_stop_and_unregister_services (self);
+    sunday_stop_and_unregister_services (self);
   }
   else
   {
-    if (!frida_join_standalone_services (self))
-      frida_kill_standalone_services (self);
+    if (!sunday_join_standalone_services (self))
+      sunday_kill_standalone_services (self);
   }
 
-  frida_service_context_free (self);
+  sunday_service_context_free (self);
 }
 
 char *
-frida_helper_service_derive_basename (void)
+sunday_helper_service_derive_basename (void)
 {
   WCHAR filename_utf16[MAX_PATH + 1] = { 0, };
   gchar * name, * tmp;
@@ -135,7 +135,7 @@ frida_helper_service_derive_basename (void)
 }
 
 char *
-frida_helper_service_derive_filename_for_suffix (const char * suffix)
+sunday_helper_service_derive_filename_for_suffix (const char * suffix)
 {
   WCHAR filename_utf16[MAX_PATH + 1] = { 0, };
   gchar * name, * tail, * tmp;
@@ -161,23 +161,23 @@ frida_helper_service_derive_filename_for_suffix (const char * suffix)
 }
 
 char *
-frida_helper_service_derive_svcname_for_self (void)
+sunday_helper_service_derive_svcname_for_self (void)
 {
   gchar * basename, * name;
 
-  basename = frida_helper_service_derive_basename ();
-  name = g_strconcat (basename, FRIDA_HELPER_SERVICE_ARCH, NULL);
+  basename = sunday_helper_service_derive_basename ();
+  name = g_strconcat (basename, SUNDAY_HELPER_SERVICE_ARCH, NULL);
   g_free (basename);
 
   return name;
 }
 
 char *
-frida_helper_service_derive_svcname_for_suffix (const char * suffix)
+sunday_helper_service_derive_svcname_for_suffix (const char * suffix)
 {
   gchar * basename, * name;
 
-  basename = frida_helper_service_derive_basename ();
+  basename = sunday_helper_service_derive_basename ();
   name = g_strconcat (basename, suffix, NULL);
   g_free (basename);
 
@@ -185,28 +185,28 @@ frida_helper_service_derive_svcname_for_suffix (const char * suffix)
 }
 
 void
-frida_managed_helper_service_enter_dispatcher_and_main_loop (void)
+sunday_managed_helper_service_enter_dispatcher_and_main_loop (void)
 {
   SERVICE_TABLE_ENTRYW dispatch_table[2] = { 0, };
   gchar * name;
 
-  name = frida_helper_service_derive_svcname_for_self ();
-  frida_managed_helper_service_name = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
+  name = sunday_helper_service_derive_svcname_for_self ();
+  sunday_managed_helper_service_name = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
   g_free (name);
 
-  dispatch_table[0].lpServiceName = frida_managed_helper_service_name;
-  dispatch_table[0].lpServiceProc = frida_managed_helper_service_main;
+  dispatch_table[0].lpServiceName = sunday_managed_helper_service_name;
+  dispatch_table[0].lpServiceProc = sunday_managed_helper_service_main;
 
   StartServiceCtrlDispatcherW (dispatch_table);
 
-  frida_managed_helper_service_status_handle = NULL;
+  sunday_managed_helper_service_status_handle = NULL;
 
-  g_free (frida_managed_helper_service_name);
-  frida_managed_helper_service_name = NULL;
+  g_free (sunday_managed_helper_service_name);
+  sunday_managed_helper_service_name = NULL;
 }
 
 static void WINAPI
-frida_managed_helper_service_main (DWORD argc, WCHAR ** argv)
+sunday_managed_helper_service_main (DWORD argc, WCHAR ** argv)
 {
   GMainLoop * loop;
 
@@ -215,22 +215,22 @@ frida_managed_helper_service_main (DWORD argc, WCHAR ** argv)
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  frida_managed_helper_service_status_handle = RegisterServiceCtrlHandlerExW (
-      frida_managed_helper_service_name,
-      frida_managed_helper_service_handle_control_code,
+  sunday_managed_helper_service_status_handle = RegisterServiceCtrlHandlerExW (
+      sunday_managed_helper_service_name,
+      sunday_managed_helper_service_handle_control_code,
       loop);
 
-  frida_managed_helper_service_report_status (SERVICE_START_PENDING, NO_ERROR, 0);
+  sunday_managed_helper_service_report_status (SERVICE_START_PENDING, NO_ERROR, 0);
 
-  frida_managed_helper_service_report_status (SERVICE_RUNNING, NO_ERROR, 0);
+  sunday_managed_helper_service_report_status (SERVICE_RUNNING, NO_ERROR, 0);
   g_main_loop_run (loop);
-  frida_managed_helper_service_report_status (SERVICE_STOPPED, NO_ERROR, 0);
+  sunday_managed_helper_service_report_status (SERVICE_STOPPED, NO_ERROR, 0);
 
   g_main_loop_unref (loop);
 }
 
 static gboolean
-frida_managed_helper_service_stop (gpointer data)
+sunday_managed_helper_service_stop (gpointer data)
 {
   GMainLoop * loop = data;
 
@@ -240,7 +240,7 @@ frida_managed_helper_service_stop (gpointer data)
 }
 
 static DWORD WINAPI
-frida_managed_helper_service_handle_control_code (DWORD control, DWORD event_type, void * event_data, void * context)
+sunday_managed_helper_service_handle_control_code (DWORD control, DWORD event_type, void * event_data, void * context)
 {
   GMainLoop * loop = context;
 
@@ -250,8 +250,8 @@ frida_managed_helper_service_handle_control_code (DWORD control, DWORD event_typ
   switch (control)
   {
     case SERVICE_CONTROL_STOP:
-      frida_managed_helper_service_report_status (SERVICE_STOP_PENDING, NO_ERROR, 0);
-      g_idle_add (frida_managed_helper_service_stop, loop);
+      sunday_managed_helper_service_report_status (SERVICE_STOP_PENDING, NO_ERROR, 0);
+      g_idle_add (sunday_managed_helper_service_stop, loop);
       return NO_ERROR;
 
     case SERVICE_CONTROL_INTERROGATE:
@@ -263,7 +263,7 @@ frida_managed_helper_service_handle_control_code (DWORD control, DWORD event_typ
 }
 
 static void
-frida_managed_helper_service_report_status (DWORD current_state, DWORD exit_code, DWORD wait_hint)
+sunday_managed_helper_service_report_status (DWORD current_state, DWORD exit_code, DWORD wait_hint)
 {
   SERVICE_STATUS status;
   static DWORD checkpoint = 1;
@@ -290,18 +290,18 @@ frida_managed_helper_service_report_status (DWORD current_state, DWORD exit_code
 
   status.dwWaitHint = wait_hint;
 
-  SetServiceStatus (frida_managed_helper_service_status_handle, &status);
+  SetServiceStatus (sunday_managed_helper_service_status_handle, &status);
 }
 
 static gboolean
-frida_register_and_start_services (FridaServiceContext * self, gchar ** archs, gint archs_length)
+sunday_register_and_start_services (SundayServiceContext * self, gchar ** archs, gint archs_length)
 {
-  if (!frida_register_services (self, archs, archs_length))
+  if (!sunday_register_services (self, archs, archs_length))
     return FALSE;
 
-  if (!frida_start_services (self))
+  if (!sunday_start_services (self))
   {
-    frida_unregister_services (self);
+    sunday_unregister_services (self);
     return FALSE;
   }
 
@@ -309,20 +309,20 @@ frida_register_and_start_services (FridaServiceContext * self, gchar ** archs, g
 }
 
 static void
-frida_stop_and_unregister_services (FridaServiceContext * self)
+sunday_stop_and_unregister_services (SundayServiceContext * self)
 {
-  frida_stop_services (self);
-  frida_unregister_services (self);
+  sunday_stop_services (self);
+  sunday_unregister_services (self);
 }
 
 static gboolean
-frida_spawn_standalone_services (FridaServiceContext * self, gchar ** archs, gint archs_length)
+sunday_spawn_standalone_services (SundayServiceContext * self, gchar ** archs, gint archs_length)
 {
   gint i;
 
   for (i = 0; i != archs_length; i++)
   {
-    HANDLE service = frida_spawn_standalone_service (self, archs[i]);
+    HANDLE service = sunday_spawn_standalone_service (self, archs[i]);
     if (service == NULL)
       goto unable_to_spawn;
     g_queue_push_tail (&self->standalone_services, service);
@@ -332,39 +332,39 @@ frida_spawn_standalone_services (FridaServiceContext * self, gchar ** archs, gin
 
 unable_to_spawn:
   {
-    frida_kill_standalone_services (self);
+    sunday_kill_standalone_services (self);
     return FALSE;
   }
 }
 
 static gboolean
-frida_join_standalone_services (FridaServiceContext * self)
+sunday_join_standalone_services (SundayServiceContext * self)
 {
   gboolean success = TRUE;
   GList * cur;
 
   for (cur = self->standalone_services.head; cur != NULL; cur = cur->next)
-    success &= frida_join_standalone_service (self, cur->data);
+    success &= sunday_join_standalone_service (self, cur->data);
 
   if (success)
-    frida_release_standalone_services (self);
+    sunday_release_standalone_services (self);
 
   return success;
 }
 
 static void
-frida_kill_standalone_services (FridaServiceContext * self)
+sunday_kill_standalone_services (SundayServiceContext * self)
 {
   GList * cur;
 
   for (cur = self->standalone_services.head; cur != NULL; cur = cur->next)
-    frida_kill_standalone_service (self, cur->data);
+    sunday_kill_standalone_service (self, cur->data);
 
-  frida_release_standalone_services (self);
+  sunday_release_standalone_services (self);
 }
 
 static void
-frida_release_standalone_services (FridaServiceContext * self)
+sunday_release_standalone_services (SundayServiceContext * self)
 {
   HANDLE service;
 
@@ -373,13 +373,13 @@ frida_release_standalone_services (FridaServiceContext * self)
 }
 
 static gboolean
-frida_register_services (FridaServiceContext * self, gchar ** archs, gint archs_length)
+sunday_register_services (SundayServiceContext * self, gchar ** archs, gint archs_length)
 {
   gint i;
 
   for (i = 0; i != archs_length; i++)
   {
-    SC_HANDLE service = frida_register_service (self, archs[i]);
+    SC_HANDLE service = sunday_register_service (self, archs[i]);
     if (service == NULL)
       goto unable_to_register;
     g_queue_push_tail (&self->system_services, service);
@@ -389,20 +389,20 @@ frida_register_services (FridaServiceContext * self, gchar ** archs, gint archs_
 
 unable_to_register:
   {
-    frida_unregister_services (self);
+    sunday_unregister_services (self);
     return FALSE;
   }
 }
 
 static gboolean
-frida_unregister_services (FridaServiceContext * self)
+sunday_unregister_services (SundayServiceContext * self)
 {
   gboolean success = TRUE;
   SC_HANDLE service;
 
   while ((service = g_queue_pop_tail (&self->system_services)) != NULL)
   {
-    success &= frida_unregister_service (self, service);
+    success &= sunday_unregister_service (self, service);
     CloseServiceHandle (service);
   }
 
@@ -410,13 +410,13 @@ frida_unregister_services (FridaServiceContext * self)
 }
 
 static gboolean
-frida_start_services (FridaServiceContext * self)
+sunday_start_services (SundayServiceContext * self)
 {
   GList * cur;
 
   for (cur = self->system_services.head; cur != NULL; cur = cur->next)
   {
-    if (!frida_start_service (self, cur->data))
+    if (!sunday_start_service (self, cur->data))
       goto unable_to_start;
   }
 
@@ -424,25 +424,25 @@ frida_start_services (FridaServiceContext * self)
 
 unable_to_start:
   {
-    frida_stop_services (self);
+    sunday_stop_services (self);
     return FALSE;
   }
 }
 
 static gboolean
-frida_stop_services (FridaServiceContext * self)
+sunday_stop_services (SundayServiceContext * self)
 {
   gboolean success = TRUE;
   GList * cur;
 
   for (cur = self->system_services.head; cur != NULL; cur = cur->next)
-    success &= frida_stop_service (self, cur->data);
+    success &= sunday_stop_service (self, cur->data);
 
   return success;
 }
 
 static SC_HANDLE
-frida_register_service (FridaServiceContext * self, const gchar * suffix)
+sunday_register_service (SundayServiceContext * self, const gchar * suffix)
 {
   SC_HANDLE handle;
   gchar * servicename_utf8;
@@ -458,7 +458,7 @@ frida_register_service (FridaServiceContext * self, const gchar * suffix)
   displayname_utf8 = g_strdup_printf ("Frida %s helper (%s)", suffix, servicename_utf8);
   displayname = g_utf8_to_utf16 (displayname_utf8, -1, NULL, NULL, NULL);
 
-  filename_utf8 = frida_helper_service_derive_filename_for_suffix (suffix);
+  filename_utf8 = sunday_helper_service_derive_filename_for_suffix (suffix);
   filename = g_utf8_to_utf16 (filename_utf8, -1, NULL, NULL, NULL);
 
   handle = CreateServiceW (self->scm,
@@ -488,7 +488,7 @@ frida_register_service (FridaServiceContext * self, const gchar * suffix)
 }
 
 static gboolean
-frida_unregister_service (FridaServiceContext * self, SC_HANDLE handle)
+sunday_unregister_service (SundayServiceContext * self, SC_HANDLE handle)
 {
   (void) self;
 
@@ -496,7 +496,7 @@ frida_unregister_service (FridaServiceContext * self, SC_HANDLE handle)
 }
 
 static void
-frida_unregister_stale_services (FridaServiceContext * self)
+sunday_unregister_stale_services (SundayServiceContext * self)
 {
   BYTE * services_data;
   DWORD services_size, bytes_needed, num_services, resume_handle;
@@ -600,7 +600,7 @@ retry:
     while (g_hash_table_iter_next (&iter, (gpointer *) &stale_dir, NULL))
     {
       GFile * file = g_file_new_for_path (stale_dir);
-      frida_rmtree (file);
+      sunday_rmtree (file);
       g_object_unref (file);
     }
 
@@ -612,7 +612,7 @@ retry:
 }
 
 static gboolean
-frida_start_service (FridaServiceContext * self, SC_HANDLE handle)
+sunday_start_service (SundayServiceContext * self, SC_HANDLE handle)
 {
   (void) self;
 
@@ -620,7 +620,7 @@ frida_start_service (FridaServiceContext * self, SC_HANDLE handle)
 }
 
 static gboolean
-frida_stop_service (FridaServiceContext * self, SC_HANDLE handle)
+sunday_stop_service (SundayServiceContext * self, SC_HANDLE handle)
 {
   SERVICE_STATUS status = { 0, };
 
@@ -630,7 +630,7 @@ frida_stop_service (FridaServiceContext * self, SC_HANDLE handle)
 }
 
 static HANDLE
-frida_spawn_standalone_service (FridaServiceContext * self, const gchar * suffix)
+sunday_spawn_standalone_service (SundayServiceContext * self, const gchar * suffix)
 {
   HANDLE handle = NULL;
   gchar * appname_utf8;
@@ -642,7 +642,7 @@ frida_spawn_standalone_service (FridaServiceContext * self, const gchar * suffix
 
   (void) self;
 
-  appname_utf8 = frida_helper_service_derive_filename_for_suffix (suffix);
+  appname_utf8 = sunday_helper_service_derive_filename_for_suffix (suffix);
   appname = (WCHAR *) g_utf8_to_utf16 (appname_utf8, -1, NULL, NULL, NULL);
 
   cmdline_utf8 = g_strconcat ("\"", appname_utf8, "\" STANDALONE", NULL);
@@ -666,7 +666,7 @@ frida_spawn_standalone_service (FridaServiceContext * self, const gchar * suffix
 }
 
 static gboolean
-frida_join_standalone_service (FridaServiceContext * self, HANDLE handle)
+sunday_join_standalone_service (SundayServiceContext * self, HANDLE handle)
 {
   (void) self;
 
@@ -675,19 +675,19 @@ frida_join_standalone_service (FridaServiceContext * self, HANDLE handle)
 }
 
 static void
-frida_kill_standalone_service (FridaServiceContext * self, HANDLE handle)
+sunday_kill_standalone_service (SundayServiceContext * self, HANDLE handle)
 {
   (void) self;
 
   TerminateProcess (handle, 1);
 }
 
-static FridaServiceContext *
-frida_service_context_new (const gchar * service_basename)
+static SundayServiceContext *
+sunday_service_context_new (const gchar * service_basename)
 {
-  FridaServiceContext * self;
+  SundayServiceContext * self;
 
-  self = g_slice_new0 (FridaServiceContext);
+  self = g_slice_new0 (SundayServiceContext);
   self->service_basename = g_strdup (service_basename);
   g_queue_init (&self->standalone_services);
 
@@ -695,7 +695,7 @@ frida_service_context_new (const gchar * service_basename)
 }
 
 static void
-frida_service_context_free (FridaServiceContext * self)
+sunday_service_context_free (SundayServiceContext * self)
 {
   g_assert (g_queue_is_empty (&self->system_services));
   g_assert (g_queue_is_empty (&self->standalone_services));
@@ -705,11 +705,11 @@ frida_service_context_free (FridaServiceContext * self)
 
   g_free (self->service_basename);
 
-  g_slice_free (FridaServiceContext, self);
+  g_slice_free (SundayServiceContext, self);
 }
 
 static void
-frida_rmtree (GFile * file)
+sunday_rmtree (GFile * file)
 {
   GFileEnumerator * enumerator =
       g_file_enumerate_children (file, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS, NULL, NULL);
@@ -721,7 +721,7 @@ frida_rmtree (GFile * file)
     while (g_file_enumerator_iterate (enumerator, &info, &child, NULL, NULL) && child != NULL)
     {
       if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
-        frida_rmtree (child);
+        sunday_rmtree (child);
       else
         g_file_delete (child, NULL, NULL);
     }

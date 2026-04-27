@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 
-namespace Frida {
+namespace Sunday {
 	public enum LinuxSyscall {
 		READ = 5000,
 		WRITE = 5001,

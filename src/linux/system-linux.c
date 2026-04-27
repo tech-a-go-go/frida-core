@@ -6,49 +6,49 @@
 #include <gio/gunixmounts.h>
 #include <gum/gum.h>
 
-typedef struct _FridaEnumerateProcessesOperation FridaEnumerateProcessesOperation;
+typedef struct _SundayEnumerateProcessesOperation SundayEnumerateProcessesOperation;
 
-struct _FridaEnumerateProcessesOperation
+struct _SundayEnumerateProcessesOperation
 {
-  FridaScope scope;
+  SundayScope scope;
   GArray * result;
 };
 
-static void frida_collect_process_info (guint pid, FridaEnumerateProcessesOperation * op);
-static gboolean frida_is_directory_noexec (const gchar * directory);
-static gchar * frida_get_application_directory (void);
-static gboolean frida_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_name);
-static GDateTime * frida_query_boot_time (void);
-static GVariant * frida_uid_to_name (uid_t uid);
+static void sunday_collect_process_info (guint pid, SundayEnumerateProcessesOperation * op);
+static gboolean sunday_is_directory_noexec (const gchar * directory);
+static gchar * sunday_get_application_directory (void);
+static gboolean sunday_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_name);
+static GDateTime * sunday_query_boot_time (void);
+static GVariant * sunday_uid_to_name (uid_t uid);
 
 void
-frida_system_get_frontmost_application (FridaFrontmostQueryOptions * options, FridaHostApplicationInfo * result, GError ** error)
+sunday_system_get_frontmost_application (SundayFrontmostQueryOptions * options, SundayHostApplicationInfo * result, GError ** error)
 {
   g_set_error (error,
-      FRIDA_ERROR,
-      FRIDA_ERROR_NOT_SUPPORTED,
+      SUNDAY_ERROR,
+      SUNDAY_ERROR_NOT_SUPPORTED,
       "Not implemented");
 }
 
-FridaHostApplicationInfo *
-frida_system_enumerate_applications (FridaApplicationQueryOptions * options, int * result_length)
+SundayHostApplicationInfo *
+sunday_system_enumerate_applications (SundayApplicationQueryOptions * options, int * result_length)
 {
   *result_length = 0;
 
   return NULL;
 }
 
-FridaHostProcessInfo *
-frida_system_enumerate_processes (FridaProcessQueryOptions * options, int * result_length)
+SundayHostProcessInfo *
+sunday_system_enumerate_processes (SundayProcessQueryOptions * options, int * result_length)
 {
-  FridaEnumerateProcessesOperation op;
+  SundayEnumerateProcessesOperation op;
 
-  op.scope = frida_process_query_options_get_scope (options);
-  op.result = g_array_new (FALSE, FALSE, sizeof (FridaHostProcessInfo));
+  op.scope = sunday_process_query_options_get_scope (options);
+  op.result = g_array_new (FALSE, FALSE, sizeof (SundayHostProcessInfo));
 
-  if (frida_process_query_options_has_selected_pids (options))
+  if (sunday_process_query_options_has_selected_pids (options))
   {
-    frida_process_query_options_enumerate_selected_pids (options, (GFunc) frida_collect_process_info, &op);
+    sunday_process_query_options_enumerate_selected_pids (options, (GFunc) sunday_collect_process_info, &op);
   }
   else
   {
@@ -64,7 +64,7 @@ frida_system_enumerate_processes (FridaProcessQueryOptions * options, int * resu
 
       pid = strtoul (proc_name, &end, 10);
       if (*end == '\0')
-        frida_collect_process_info (pid, &op);
+        sunday_collect_process_info (pid, &op);
     }
 
     g_dir_close (proc_dir);
@@ -72,13 +72,13 @@ frida_system_enumerate_processes (FridaProcessQueryOptions * options, int * resu
 
   *result_length = op.result->len;
 
-  return (FridaHostProcessInfo *) g_array_free (op.result, FALSE);
+  return (SundayHostProcessInfo *) g_array_free (op.result, FALSE);
 }
 
 static void
-frida_collect_process_info (guint pid, FridaEnumerateProcessesOperation * op)
+sunday_collect_process_info (guint pid, SundayEnumerateProcessesOperation * op)
 {
-  FridaHostProcessInfo info = { 0, };
+  SundayHostProcessInfo info = { 0, };
   gboolean still_alive = TRUE;
   gchar * proc_name = NULL;
   gchar * exe_path = NULL;
@@ -122,20 +122,20 @@ frida_collect_process_info (guint pid, FridaEnumerateProcessesOperation * op)
   info.pid = pid;
   info.name = g_steal_pointer (&name);
 
-  info.parameters = frida_make_parameters_dict ();
+  info.parameters = sunday_make_parameters_dict ();
 
-  if (op->scope != FRIDA_SCOPE_MINIMAL)
+  if (op->scope != SUNDAY_SCOPE_MINIMAL)
   {
     g_hash_table_insert (info.parameters, g_strdup ("path"),
         g_variant_ref_sink (g_variant_new_take_string (g_steal_pointer (&program_path))));
 
-    still_alive = frida_add_process_metadata (info.parameters, proc_name);
+    still_alive = sunday_add_process_metadata (info.parameters, proc_name);
   }
 
   if (still_alive)
     g_array_append_val (op->result, info);
   else
-    frida_host_process_info_destroy (&info);
+    sunday_host_process_info_destroy (&info);
 
 beach:
   g_free (name);
@@ -147,13 +147,13 @@ beach:
 }
 
 void
-frida_system_kill (guint pid)
+sunday_system_kill (guint pid)
 {
   kill (pid, SIGKILL);
 }
 
 gchar *
-frida_temporary_directory_get_system_tmp (void)
+sunday_temporary_directory_get_system_tmp (void)
 {
   const gchar * tmp_dir;
 
@@ -181,14 +181,14 @@ frida_temporary_directory_get_system_tmp (void)
    * locations are found to be unsuitable, then a future implementation may seek
    * to validate an ordered list of potential locations.
    */
-  if (frida_is_directory_noexec (tmp_dir))
-    return frida_get_application_directory ();
+  if (sunday_is_directory_noexec (tmp_dir))
+    return sunday_get_application_directory ();
   else
     return g_strdup (tmp_dir);
 }
 
 static gboolean
-frida_is_directory_noexec (const gchar * directory)
+sunday_is_directory_noexec (const gchar * directory)
 {
   gboolean is_noexec;
   g_autoptr(GUnixMountEntry) entry;
@@ -206,13 +206,13 @@ frida_is_directory_noexec (const gchar * directory)
 }
 
 static gchar *
-frida_get_application_directory (void)
+sunday_get_application_directory (void)
 {
   return g_path_get_dirname (gum_module_get_path (gum_process_get_main_module ()));
 }
 
 static gboolean
-frida_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_name)
+sunday_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_name)
 {
   gboolean success = FALSE;
   gchar * status_path = NULL;
@@ -246,7 +246,7 @@ frida_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_na
 
       g_hash_table_insert (parameters, g_strdup ("uid"), g_variant_ref_sink (g_variant_new_uint32 (uid)));
 
-      user = frida_uid_to_name (uid);
+      user = sunday_uid_to_name (uid);
       if (user != NULL)
         g_hash_table_insert (parameters, g_strdup ("user"), user);
 
@@ -288,7 +288,7 @@ frida_add_process_metadata (GHashTable * parameters, const gchar * proc_entry_na
 
   if (g_once_init_enter (&caches_initialized))
   {
-    boot_time = frida_query_boot_time ();
+    boot_time = sunday_query_boot_time ();
     usec_per_jiffy = G_USEC_PER_SEC / sysconf (_SC_CLK_TCK);
 
     g_once_init_leave (&caches_initialized, TRUE);
@@ -312,7 +312,7 @@ beach:
 }
 
 static GDateTime *
-frida_query_boot_time (void)
+sunday_query_boot_time (void)
 {
   GDateTime * boot_time = NULL;
   gchar * data = NULL;
@@ -347,7 +347,7 @@ frida_query_boot_time (void)
 }
 
 static GVariant *
-frida_uid_to_name (uid_t uid)
+sunday_uid_to_name (uid_t uid)
 {
   GVariant * name = NULL;
   static size_t cached_buffer_size = 0;

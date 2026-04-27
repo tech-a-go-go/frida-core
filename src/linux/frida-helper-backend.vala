@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class LinuxHelperBackend : Object, LinuxHelper {
 		public signal void idle ();
 
@@ -885,7 +885,7 @@ namespace Frida {
 			uint64 loader_base = (uintptr) bootstrap_result.context.allocation_base;
 
 			try {
-				unowned uint8[] loader_code = Frida.Data.HelperBackend.get_loader_bin_blob ().data;
+				unowned uint8[] loader_code = Sunday.Data.HelperBackend.get_loader_bin_blob ().data;
 				write_memory (loader_base, loader_code);
 				maybe_fixup_helper_code (loader_base, loader_code);
 
@@ -964,7 +964,7 @@ namespace Frida {
 		private LoaderLayout compute_loader_layout (InjectSpec spec, string fallback_address) {
 			var layout = LoaderLayout ();
 
-			unowned uint8[] code = Frida.Data.HelperBackend.get_loader_bin_blob ().data;
+			unowned uint8[] code = Sunday.Data.HelperBackend.get_loader_bin_blob ().data;
 
 			size_t code_size = round_size_to_page_size (code.length);
 
@@ -1005,7 +1005,7 @@ namespace Frida {
 			RemoteCallResult loader_result = yield loader_call.execute (cancellable);
 			if (loader_result.status != COMPLETED) {
 				uint64 pc = loader_result.regs.program_counter;
-				if (pc >= loader_base && pc < loader_base + Frida.Data.HelperBackend.get_loader_bin_blob ().data.length) {
+				if (pc >= loader_base && pc < loader_base + Sunday.Data.HelperBackend.get_loader_bin_blob ().data.length) {
 					throw new Error.NOT_SUPPORTED (
 						"Loader crashed with signal %d at offset 0x%x; please file a bug\n%s",
 						loader_result.stop_signal,
@@ -1054,7 +1054,7 @@ namespace Frida {
 		private async BootstrapResult bootstrap (size_t loader_size, Cancellable? cancellable) throws Error, IOError {
 			var result = new BootstrapResult ();
 
-			unowned uint8[] bootstrapper_code = Frida.Data.HelperBackend.get_bootstrapper_bin_blob ().data;
+			unowned uint8[] bootstrapper_code = Sunday.Data.HelperBackend.get_bootstrapper_bin_blob ().data;
 			size_t bootstrapper_size = round_size_to_page_size (bootstrapper_code.length);
 
 			size_t stack_size = 64 * 1024;
@@ -1465,7 +1465,7 @@ namespace Frida {
 			construct;
 		}
 
-		public UnixConnection frida_ctrl {
+		public UnixConnection sunday_ctrl {
 			get;
 			construct;
 		}
@@ -1513,13 +1513,13 @@ namespace Frida {
 		private Promise<bool> cancel_request = new Promise<bool> ();
 		private Cancellable io_cancellable = new Cancellable ();
 
-		private RemoteAgent (uint pid, InjectSpec spec, BootstrapResult bres, UnixConnection frida_ctrl,
+		private RemoteAgent (uint pid, InjectSpec spec, BootstrapResult bres, UnixConnection sunday_ctrl,
 				UnixConnection? agent_ctrl = null) {
 			Object (
 				pid: pid,
 				inject_spec: spec,
 				bootstrap_result: bres,
-				frida_ctrl: frida_ctrl,
+				sunday_ctrl: sunday_ctrl,
 				agent_ctrl: agent_ctrl
 			);
 		}
@@ -1546,20 +1546,20 @@ namespace Frida {
 		}
 
 		internal static async RemoteAgent start (LoaderLaunch launch, InjectSpec spec, uint pid, BootstrapResult bres,
-				UnixConnection frida_ctrl, UnixConnection? agent_ctrl, Cancellable? cancellable) throws Error, IOError {
-			var agent = new RemoteAgent (pid, spec, bres, frida_ctrl, agent_ctrl);
+				UnixConnection sunday_ctrl, UnixConnection? agent_ctrl, Cancellable? cancellable) throws Error, IOError {
+			var agent = new RemoteAgent (pid, spec, bres, sunday_ctrl, agent_ctrl);
 
 			try {
 				var io_priority = Priority.DEFAULT;
 
 				if (launch == FROM_SCRATCH)
-					frida_ctrl.send_fd (spec.library_so.get_fd (), cancellable);
+					sunday_ctrl.send_fd (spec.library_so.get_fd (), cancellable);
 
 				if (agent.agent_ctrlfd_for_peer != null) {
-					frida_ctrl.send_fd (agent.agent_ctrlfd_for_peer.handle, cancellable);
+					sunday_ctrl.send_fd (agent.agent_ctrlfd_for_peer.handle, cancellable);
 					agent.agent_ctrlfd_for_peer = null;
 				} else {
-					yield frida_ctrl.get_output_stream ().write_async ({ 0 }, io_priority, cancellable);
+					yield sunday_ctrl.get_output_stream ().write_async ({ 0 }, io_priority, cancellable);
 				}
 			} catch (GLib.Error e) {
 				if (e is IOError.CANCELLED)
@@ -1575,7 +1575,7 @@ namespace Frida {
 
 		public void ack () {
 			uint8 raw_type = HelperMessageType.ACK;
-			frida_ctrl.get_output_stream ().write_all_async.begin ((uint8[]) &raw_type, Priority.DEFAULT, null);
+			sunday_ctrl.get_output_stream ().write_all_async.begin ((uint8[]) &raw_type, Priority.DEFAULT, null);
 		}
 
 		private async void monitor () {
@@ -1583,7 +1583,7 @@ namespace Frida {
 			try {
 				var unload_policy = UnloadPolicy.IMMEDIATE;
 
-				InputStream input = frida_ctrl.get_input_stream ();
+				InputStream input = sunday_ctrl.get_input_stream ();
 				var io_priority = Priority.DEFAULT;
 				size_t n;
 
@@ -1693,7 +1693,7 @@ namespace Frida {
 		}
 
 		public RemoteAgent clone (uint clone_id, AgentFeatures features) {
-			var agent = new RemoteAgent (0, inject_spec.clone (clone_id, features), bootstrap_result.clone (), frida_ctrl);
+			var agent = new RemoteAgent (0, inject_spec.clone (clone_id, features), bootstrap_result.clone (), sunday_ctrl);
 			agent._state = _state;
 			return agent;
 		}

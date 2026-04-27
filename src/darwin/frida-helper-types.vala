@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public interface DarwinHelper : Object {
 		public signal void output (uint pid, int fd, uint8[] data);
 		public signal void spawn_added (HostSpawnInfo info);
@@ -46,7 +46,7 @@ namespace Frida {
 		public abstract async MappedLibraryBlob? try_mmap (Bytes blob, Cancellable? cancellable) throws Error, IOError;
 	}
 
-	[DBus (name = "re.frida.Helper")]
+	[DBus (name = "re.sunday.Helper")]
 	public interface DarwinRemoteHelper : Object {
 		public signal void output (uint pid, int fd, uint8[] data);
 		public signal void spawn_added (HostSpawnInfo info);

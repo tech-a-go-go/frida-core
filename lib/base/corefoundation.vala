@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class CFArray<T> {
 		private CoreFoundation.Array handle;
 

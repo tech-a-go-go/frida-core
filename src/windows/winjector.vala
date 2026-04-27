@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class Winjector : Object, Injector {
 		public WindowsHelper helper {
 			get;

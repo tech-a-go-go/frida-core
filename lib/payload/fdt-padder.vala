@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 #if WINDOWS
 	public sealed class FileDescriptorTablePadder {
 		public static FileDescriptorTablePadder obtain () {

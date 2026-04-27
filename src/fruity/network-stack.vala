@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	public interface NetworkStack : Object {
 		public abstract InetAddress listener_ip {
 			get;
@@ -304,7 +304,7 @@ namespace Frida.Fruity {
 
 				end_output ();
 
-				schedule_on_frida_thread (handle_incoming_datagrams.callback);
+				schedule_on_sunday_thread (handle_incoming_datagrams.callback);
 
 				return err;
 			});
@@ -337,7 +337,7 @@ namespace Frida.Fruity {
 			if (datagrams.is_empty)
 				return;
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				if (state == STARTED)
 					outgoing_datagrams (datagrams);
 				return Source.REMOVE;
@@ -354,7 +354,7 @@ namespace Frida.Fruity {
 				return;
 			}
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				if (state == STARTED) {
 					var datagrams = new Gee.ArrayQueue<Bytes> ();
 					datagrams.offer (datagram);
@@ -440,7 +440,7 @@ namespace Frida.Fruity {
 			}
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);
@@ -553,7 +553,7 @@ namespace Frida.Fruity {
 					return OK;
 				});
 				if (err != OK) {
-					schedule_on_frida_thread (() => {
+					schedule_on_sunday_thread (() => {
 						established.reject (parse_error (err));
 						return Source.REMOVE;
 					});
@@ -588,7 +588,7 @@ namespace Frida.Fruity {
 					update_pending_io ();
 				});
 
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					state = OPEN;
 
 					if (!established.future.ready)
@@ -652,7 +652,7 @@ namespace Frida.Fruity {
 					update_pending_io ();
 				});
 
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					if (!established.future.ready)
 						established.reject (parse_error (err));
 
@@ -784,7 +784,7 @@ namespace Frida.Fruity {
 				return n;
 			}
 
-			private void schedule_on_frida_thread (owned SourceFunc function) {
+			private void schedule_on_sunday_thread (owned SourceFunc function) {
 				var source = new IdleSource ();
 				source.set_callback ((owned) function);
 				source.attach (main_context);

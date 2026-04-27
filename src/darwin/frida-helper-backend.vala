@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public class DarwinHelperBackend : Object, DarwinHelper {
 		public signal void idle ();
 		public signal void child_dead (uint pid);
@@ -153,7 +153,7 @@ namespace Frida {
 			Error error = null;
 
 			_launch (identifier, options, (p, e) => {
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					pipes = p;
 					error = e;
 					launch.callback ();
@@ -510,21 +510,21 @@ namespace Frida {
 		}
 
 		public void _on_spawn_instance_ready (uint pid) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				spawn_instance_ready (pid);
 				return Source.REMOVE;
 			});
 		}
 
 		public void _on_spawn_instance_error (uint pid, Error error) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				spawn_instance_error (pid, error);
 				return Source.REMOVE;
 			});
 		}
 
 		public void _on_mach_thread_dead (uint id, void * posix_thread) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				var instance = inject_instances[id];
 				assert (instance != null);
 
@@ -538,7 +538,7 @@ namespace Frida {
 		}
 
 		public void _on_posix_thread_dead (uint id) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				_destroy_inject_instance (id);
 				return Source.REMOVE;
 			});
@@ -625,7 +625,7 @@ namespace Frida {
 			lock (instances) {
 				instances.remove (instance);
 				if (on_last_instance_destroyed != null && instances.is_empty)
-					schedule_on_frida_thread ((owned) on_last_instance_destroyed);
+					schedule_on_sunday_thread ((owned) on_last_instance_destroyed);
 			}
 		}
 
@@ -639,12 +639,12 @@ namespace Frida {
 
 		private async void flush_dispatch_queue () {
 			_schedule_on_dispatch_queue (() => {
-				schedule_on_frida_thread (flush_dispatch_queue.callback);
+				schedule_on_sunday_thread (flush_dispatch_queue.callback);
 			});
 			yield;
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);
@@ -718,7 +718,7 @@ namespace Frida {
 			if (dtrace != null)
 				throw new Error.INVALID_OPERATION ("Already enabled");
 
-			string? predicate = Environment.get_variable ("FRIDA_DTRACE_PREDICATE");
+			string? predicate = Environment.get_variable ("SUNDAY_DTRACE_PREDICATE");
 			string predicate_clause;
 			if (predicate != null)
 				predicate_clause = "/" + predicate + "/";

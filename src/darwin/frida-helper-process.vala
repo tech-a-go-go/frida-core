@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class DarwinHelperProcess : Object, DarwinHelper {
 		public uint pid {
 			get {
@@ -505,14 +505,14 @@ namespace Frida {
 #if HAVE_EMBEDDED_ASSETS
 			FileUtils.chmod (tempdir.path, 0755);
 
-			var blob = Frida.Data.Helper.get_frida_helper_blob ();
+			var blob = Sunday.Data.Helper.get_sunday_helper_blob ();
 			helper = new TemporaryHelperFile (
 				new TemporaryFile.from_stream ("frida-helper",
 					new MemoryInputStream.from_data (blob.data, null),
 					tempdir));
 			FileUtils.chmod (helper.path, 0700);
 #else
-			helper = new InstalledHelperFile.for_path (Frida.helper_path);
+			helper = new InstalledHelperFile.for_path (Sunday.helper_path);
 #endif
 		}
 
@@ -527,7 +527,7 @@ namespace Frida {
 			if (thinned)
 				return false;
 
-			var blob = Frida.Data.Helper.get_frida_helper_blob ();
+			var blob = Sunday.Data.Helper.get_sunday_helper_blob ();
 
 			var input = new DataInputStream (new MemoryInputStream.from_data (blob.data, null));
 			input.byte_order = BIG_ENDIAN;

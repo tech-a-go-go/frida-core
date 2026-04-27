@@ -48,8 +48,8 @@ def main():
         return
 
     extra = args.extra_args
-    frida_version = extra[0]
-    frida_version_components = tuple(extra[1:5])
+    sunday_version = extra[0]
+    sunday_version_components = tuple(extra[1:5])
     api_version = extra[5]
 
     if output_type == 'vapi-stamp':
@@ -83,7 +83,7 @@ def main():
     elif output_type == 'vapi':
         enable_vapi = True
 
-    api = parse_api(frida_version, frida_version_components, api_version, toplevel_code, core_header, core_vapi, base_header, base_vapi)
+    api = parse_api(sunday_version, sunday_version_components, api_version, toplevel_code, core_header, core_vapi, base_header, base_vapi)
 
     if enable_header:
         emit_header(api, output_dir)
@@ -100,22 +100,22 @@ def emit_header(api, output_dir):
 
         output_header_file.write("#include <glib.h>\n#include <glib-object.h>\n#include <gio/gio.h>\n#include <json-glib/json-glib.h>\n\n")
 
-        output_header_file.write(f"#define FRIDA_VERSION \"{api.frida_version}\"\n\n")
+        output_header_file.write(f"#define SUNDAY_VERSION \"{api.sunday_version}\"\n\n")
 
-        for name, value in zip(['MAJOR', 'MINOR', 'MICRO', 'NANO'], api.frida_version_components):
-            output_header_file.write(f"#define FRIDA_{name}_VERSION {value}\n")
+        for name, value in zip(['MAJOR', 'MINOR', 'MICRO', 'NANO'], api.sunday_version_components):
+            output_header_file.write(f"#define SUNDAY_{name}_VERSION {value}\n")
 
         output_header_file.write("""
-#define FRIDA_CHECK_VERSION(maj, min, mic) \\
-    (FRIDA_CURRENT_VERSION >= FRIDA_VERSION_ENCODE ((maj), (min), (mic)))
+#define SUNDAY_CHECK_VERSION(maj, min, mic) \\
+    (SUNDAY_CURRENT_VERSION >= SUNDAY_VERSION_ENCODE ((maj), (min), (mic)))
 
-#define FRIDA_CURRENT_VERSION \\
-    FRIDA_VERSION_ENCODE (    \\
-        FRIDA_MAJOR_VERSION,  \\
-        FRIDA_MINOR_VERSION,  \\
-        FRIDA_MICRO_VERSION)
+#define SUNDAY_CURRENT_VERSION \\
+    SUNDAY_VERSION_ENCODE (    \\
+        SUNDAY_MAJOR_VERSION,  \\
+        SUNDAY_MINOR_VERSION,  \\
+        SUNDAY_MICRO_VERSION)
 
-#define FRIDA_VERSION_ENCODE(maj, min, mic) \\
+#define SUNDAY_VERSION_ENCODE(maj, min, mic) \\
     (((maj) * 1000000U) + ((min) * 1000U) + (mic))
 """)
 
@@ -130,17 +130,17 @@ def emit_header(api, output_dir):
             output_header_file.write("\n\n" + enum.c_definition)
 
         output_header_file.write("\n\n/* Library lifetime */")
-        output_header_file.write("\nvoid frida_init (void);")
-        output_header_file.write("\nvoid frida_shutdown (void);")
-        output_header_file.write("\nvoid frida_deinit (void);")
-        output_header_file.write("\nGMainContext * frida_get_main_context (void);")
+        output_header_file.write("\nvoid sunday_init (void);")
+        output_header_file.write("\nvoid sunday_shutdown (void);")
+        output_header_file.write("\nvoid sunday_deinit (void);")
+        output_header_file.write("\nGMainContext * sunday_get_main_context (void);")
 
         output_header_file.write("\n\n/* Object lifetime */")
-        output_header_file.write("\nvoid frida_unref (gpointer obj);")
+        output_header_file.write("\nvoid sunday_unref (gpointer obj);")
 
         output_header_file.write("\n\n/* Library versioning */")
-        output_header_file.write("\nvoid frida_version (guint * major, guint * minor, guint * micro, guint * nano);")
-        output_header_file.write("\nconst gchar * frida_version_string (void);")
+        output_header_file.write("\nvoid sunday_version (guint * major, guint * minor, guint * micro, guint * nano);")
+        output_header_file.write("\nconst gchar * sunday_version_string (void);")
 
         for object_type in api.object_types:
             output_header_file.write("\n\n/* %s */" % object_type.name)
@@ -163,7 +163,7 @@ def emit_header(api, output_dir):
 
         if len(api.error_types) > 0:
             output_header_file.write("\n\n/* Errors */\n")
-            output_header_file.write("\n\n".join(map(lambda enum: "GQuark frida_%(name_lc)s_quark (void);\n" \
+            output_header_file.write("\n\n".join(map(lambda enum: "GQuark sunday_%(name_lc)s_quark (void);\n" \
                 % { 'name_lc': enum.name_lc }, api.error_types)))
             output_header_file.write("\n")
             output_header_file.write("\n\n".join(map(lambda enum: enum.c_definition, api.error_types)))
@@ -178,16 +178,16 @@ def emit_header(api, output_dir):
         output_header_file.write("\n\n/* Macros */")
         macros = []
         for enum in api.enum_types:
-            macros.append("#define FRIDA_TYPE_%(name_uc)s (frida_%(name_lc)s_get_type ())" \
+            macros.append("#define SUNDAY_TYPE_%(name_uc)s (sunday_%(name_lc)s_get_type ())" \
                 % { 'name_lc': enum.name_lc, 'name_uc': enum.name_uc })
         for object_type in api.object_types:
-            macros.append("""#define FRIDA_TYPE_%(name_uc)s (frida_%(name_lc)s_get_type ())
-#define FRIDA_%(name_uc)s(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), FRIDA_TYPE_%(name_uc)s, Frida%(name)s))
-#define FRIDA_IS_%(name_uc)s(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FRIDA_TYPE_%(name_uc)s))""" \
+            macros.append("""#define SUNDAY_TYPE_%(name_uc)s (sunday_%(name_lc)s_get_type ())
+#define SUNDAY_%(name_uc)s(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), SUNDAY_TYPE_%(name_uc)s, Sunday%(name)s))
+#define SUNDAY_IS_%(name_uc)s(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SUNDAY_TYPE_%(name_uc)s))""" \
                 % { 'name': object_type.name, 'name_lc': object_type.name_lc, 'name_uc': object_type.name_uc })
 
         for enum in api.error_types:
-            macros.append("#define FRIDA_%(name_uc)s (frida_%(name_lc)s_quark ())" \
+            macros.append("#define SUNDAY_%(name_uc)s (sunday_%(name_lc)s_quark ())" \
                 % { 'name_lc': enum.name_lc, 'name_uc': enum.name_uc })
         output_header_file.write("\n" + "\n\n".join(macros))
 
@@ -230,8 +230,8 @@ def emit_gir(api: ApiSpec, core_gir: str, base_gir: str, output_dir: Path) -> st
         for elem in core_elements + base_elements:
             if tag_name == "class":
                 for child in list(elem):
-                    if (child.tag == CORE_TAG_IMPLEMENTS and child.get("name") in {"Frida.HostSessionHub", "Frida.AgentMessageSink",
-                                                                                   "FridaBase.AgentMessageSink"}) \
+                    if (child.tag == CORE_TAG_IMPLEMENTS and child.get("name") in {"Sunday.HostSessionHub", "Sunday.AgentMessageSink",
+                                                                                   "SundayBase.AgentMessageSink"}) \
                             or child.tag == CORE_TAG_FIELD \
                             or child.get("name").startswith("_"):
                         elem.remove(child)
@@ -253,7 +253,7 @@ def emit_gir(api: ApiSpec, core_gir: str, base_gir: str, output_dir: Path) -> st
         type_name = elem.get("name")
         if type_name is None:
             continue
-        for prefix in ("Frida.", "FridaBase."):
+        for prefix in ("Sunday.", "SundayBase."):
             if type_name.startswith(prefix):
                 referenced_names.add(type_name[len(prefix):])
                 break
@@ -268,7 +268,7 @@ def emit_gir(api: ApiSpec, core_gir: str, base_gir: str, output_dir: Path) -> st
     result = ET.tostring(merged_root,
                          encoding="unicode",
                          xml_declaration=True)
-    result = result.replace("FridaBase.", "Frida.")
+    result = result.replace("SundayBase.", "Sunday.")
     with OutputFile(output_dir / f"Frida-{api.version}.gir") as output_gir:
         output_gir.write(result)
 
@@ -277,8 +277,8 @@ def filter_elements(elements: List[ET.Element], spec_set: Set[str]):
 
 def emit_vapi(api, output_dir):
     with OutputFile(output_dir / f"frida-core-{api.version}.vapi") as output_vapi_file:
-        output_vapi_file.write("[CCode (cheader_filename = \"frida-core.h\", cprefix = \"Frida\", lower_case_cprefix = \"frida_\")]")
-        output_vapi_file.write("\nnamespace Frida {")
+        output_vapi_file.write("[CCode (cheader_filename = \"frida-core.h\", cprefix = \"Sunday\", lower_case_cprefix = \"sunday_\")]")
+        output_vapi_file.write("\nnamespace Sunday {")
         output_vapi_file.write("\n\tpublic static void init ();")
         output_vapi_file.write("\n\tpublic static void shutdown ();")
         output_vapi_file.write("\n\tpublic static void deinit ();")
@@ -323,14 +323,14 @@ def emit_symbol_maps_from_source(output_dir: Path):
     with OutputFile(output_dir / 'frida-core.version') as f:
         f.write("{\n")
         f.write("  global:\n")
-        f.write("    frida_*;\n")
+        f.write("    sunday_*;\n")
         f.write("    _frida_*;\n")
         f.write("\n")
         f.write("  local:\n")
         f.write("    *;\n")
         f.write("};\n")
 
-def parse_api(frida_version, frida_version_components, api_version, toplevel_code, core_header, core_vapi, base_header, base_vapi):
+def parse_api(sunday_version, sunday_version_components, api_version, toplevel_code, core_header, core_vapi, base_header, base_vapi):
     all_headers = core_header + "\n" + base_header
 
     all_enum_names = [m.group(1) for m in re.finditer(r"^\t+public\s+enum\s+(\w+)\s+", toplevel_code + "\n" + base_vapi, re.MULTILINE)]
@@ -503,7 +503,7 @@ def parse_api(frida_version, frida_version_components, api_version, toplevel_cod
         elif current_enum is not None:
             current_enum.vapi_members.append(stripped_line)
         elif current_object_type is not None and stripped_line.startswith("public"):
-            if stripped_line.startswith("public " + current_object_type.name + " (") or stripped_line.startswith("public static Frida." + current_object_type.name + " @new ("):
+            if stripped_line.startswith("public " + current_object_type.name + " (") or stripped_line.startswith("public static Sunday." + current_object_type.name + " @new ("):
                 if len(current_object_type.c_constructors) > 0:
                     current_object_type.vapi_constructor = stripped_line
             elif stripped_line.startswith("public signal"):
@@ -527,10 +527,10 @@ def parse_api(frida_version, frida_version_components, api_version, toplevel_cod
 
     functions = [f for f in parse_vapi_functions(base_vapi) if function_is_public(f.name)]
     for f in functions:
-        m = re.search(r"^[\w\*]+ frida_{}.+?;".format(f.name), all_headers, re.MULTILINE | re.DOTALL)
+        m = re.search(r"^[\w\*]+ sunday_{}.+?;".format(f.name), all_headers, re.MULTILINE | re.DOTALL)
         f.c_prototype = beautify_cprototype(m.group(0))
 
-    return ApiSpec(frida_version, frida_version_components, api_version, object_types, functions, enum_types, error_types)
+    return ApiSpec(sunday_version, sunday_version_components, api_version, object_types, functions, enum_types, error_types)
 
 def function_is_public(name):
     return not name.startswith("_") and \
@@ -564,8 +564,8 @@ def parse_vapi_functions(vapi) -> List[ApiFunction]:
 
 @dataclass
 class ApiSpec:
-    frida_version: str
-    frida_version_components: List[int]
+    sunday_version: str
+    sunday_version_components: List[int]
     version: str
     object_types: List[ApiObjectType]
     functions: List[ApiFunction]
@@ -577,7 +577,7 @@ class ApiEnum:
         self.name = name
         self.name_lc = camel_identifier_to_lc(self.name)
         self.name_uc = camel_identifier_to_uc(self.name)
-        self.c_name = 'Frida' + name
+        self.c_name = 'Sunday' + name
         self.c_name_lc = camel_identifier_to_lc(self.c_name)
         self.c_definition = None
         self.vapi_declaration = None
@@ -591,7 +591,7 @@ class ApiObjectType:
         self.kind = kind
         self.property_names = []
         self.method_names = []
-        self.c_name = 'Frida' + name
+        self.c_name = 'Sunday' + name
         self.c_name_lc = camel_identifier_to_lc(self.c_name)
         self.c_get_type = None
         self.c_constructors = []

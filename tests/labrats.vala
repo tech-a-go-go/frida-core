@@ -1,4 +1,4 @@
-namespace Frida.Test.Labrats {
+namespace Sunday.Test.Labrats {
 	public static string path_to_executable (string name, Arch arch = Arch.CURRENT) {
 		return path_to_file (name + os_arch_suffix (arch) + os_executable_suffix ());
 	}

@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class WindowsHelperBackend : Object, WindowsHelper {
 		public PrivilegeLevel level {
 			get;

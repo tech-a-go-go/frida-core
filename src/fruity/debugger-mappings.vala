@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.DebuggerMappings {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.DebuggerMappings {
 	internal async void spray_pages (GDB.Client gdb, uint64 address, size_t size, size_t page_size, Cancellable? cancellable)
 			throws Error, IOError {
 		int n_pages = (int) (size / page_size);

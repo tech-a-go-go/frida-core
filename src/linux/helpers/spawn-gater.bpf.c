@@ -34,7 +34,7 @@ int
 on_execve_enter (struct trace_event_raw_sys_enter * ctx)
 {
   __s32 nr = (__s32) ctx->id;
-  if (nr != FRIDA_LINUX_SYSCALL_EXECVE)
+  if (nr != SUNDAY_LINUX_SYSCALL_EXECVE)
     return 0;
 
   ExecveEvent * e = bpf_ringbuf_reserve (&events, sizeof (ExecveEvent), 0);

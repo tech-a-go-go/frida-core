@@ -1,7 +1,7 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone {
 	/**
-	 * Barebone backend configuration. This is specified via the FRIDA_BAREBONE_CONFIG environment
+	 * Barebone backend configuration. This is specified via the SUNDAY_BAREBONE_CONFIG environment
 	 * variable, which should point to the filesystem path of a JSON-encoded configuration file.
 	 *
 	 * Example JSON configurations:

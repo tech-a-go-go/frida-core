@@ -8,7 +8,7 @@
 #endif
 
 void
-frida_unix_socket_tune_buffer_sizes (gint fd)
+sunday_unix_socket_tune_buffer_sizes (gint fd)
 {
 #ifndef HAVE_WINDOWS
   /* The defaults are typically as low as 4K. */
@@ -20,13 +20,13 @@ frida_unix_socket_tune_buffer_sizes (gint fd)
 }
 
 void
-frida_tcp_enable_nodelay (GSocket * socket)
+sunday_tcp_enable_nodelay (GSocket * socket)
 {
   g_socket_set_option (socket, IPPROTO_TCP, TCP_NODELAY, TRUE, NULL);
 }
 
 const gchar *
-_frida_version_string (void)
+_sunday_version_string (void)
 {
   return FRIDA_VERSION;
 }

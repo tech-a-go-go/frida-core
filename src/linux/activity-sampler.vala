@@ -1,4 +1,4 @@
-public sealed class Frida.ActivitySampler : Object {
+public sealed class Sunday.ActivitySampler : Object {
 	public uint pid {
 		get;
 		construct;
@@ -21,7 +21,7 @@ public sealed class Frida.ActivitySampler : Object {
 	}
 
 	public void start () throws Error {
-		var obj = BpfObject.open ("activity-sampler.elf", Frida.Data.HelperBackend.get_activity_sampler_elf_blob ().data);
+		var obj = BpfObject.open ("activity-sampler.elf", Sunday.Data.HelperBackend.get_activity_sampler_elf_blob ().data);
 
 		var target_tgid = obj.maps.get_by_name ("target_tgid");
 		var events = obj.maps.get_by_name ("events");

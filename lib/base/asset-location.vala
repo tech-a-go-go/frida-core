@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public class AssetLocation : Object {
 		public string libdir {
 			get;

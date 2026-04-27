@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public interface WindowsHelper : Object {
 		public signal void uninjected (uint id);
 
@@ -8,7 +8,7 @@ namespace Frida {
 			string[] dependencies, uint id, Cancellable? cancellable) throws Error, IOError;
 	}
 
-	[DBus (name = "re.frida.Helper")]
+	[DBus (name = "re.sunday.Helper")]
 	public interface WindowsRemoteHelper : Object {
 		public signal void uninjected (uint id);
 

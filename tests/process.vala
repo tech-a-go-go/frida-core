@@ -1,4 +1,4 @@
-namespace Frida.Test {
+namespace Sunday.Test {
 	public sealed class Process : Object {
 		public void * handle {
 			get;

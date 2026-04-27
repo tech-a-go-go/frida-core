@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public bool can_test_cross_arch_injection =
 #if CROSS_ARCH
 		true
@@ -8,7 +8,7 @@ namespace Frida {
 		;
 }
 
-namespace Frida.Test {
+namespace Sunday.Test {
 	public static void run (string[] args) {
 		Environment.init (ref args);
 
@@ -69,20 +69,20 @@ namespace Frida.Test {
 			}
 		}
 
-		Frida.SystemTest.add_tests ();
+		Sunday.SystemTest.add_tests ();
 
 #if HAVE_LOCAL_BACKEND
-		Frida.InjectorTest.add_tests ();
+		Sunday.InjectorTest.add_tests ();
 
-		Frida.AgentTest.add_tests ();
+		Sunday.AgentTest.add_tests ();
 #endif
 #if HAVE_GADGET && !WINDOWS
-		Frida.GadgetTest.add_tests ();
+		Sunday.GadgetTest.add_tests ();
 #endif
-		Frida.HostSessionTest.add_tests ();
+		Sunday.HostSessionTest.add_tests ();
 
 #if HAVE_COMPILER_BACKEND && !QNX
-		Frida.CompilerTest.add_tests ();
+		Sunday.CompilerTest.add_tests ();
 #endif
 
 		GLib.Test.run ();
@@ -145,7 +145,7 @@ namespace Frida.Test {
 		}
 
 		string abi_name;
-		switch (Frida.Test.cpu ()) {
+		switch (Sunday.Test.cpu ()) {
 			case CPU.X86_32:
 				abi_name = "x86";
 				break;

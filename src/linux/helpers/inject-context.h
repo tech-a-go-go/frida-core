@@ -1,5 +1,5 @@
-#ifndef __FRIDA_INJECT_CONTEXT_H__
-#define __FRIDA_INJECT_CONTEXT_H__
+#ifndef __SUNDAY_INJECT_CONTEXT_H__
+#define __SUNDAY_INJECT_CONTEXT_H__
 
 #ifdef NOLIBC
 # ifdef __ANDROID__
@@ -19,28 +19,28 @@ struct sockaddr;
 # include <sys/socket.h>
 #endif
 
-typedef size_t FridaBootstrapStatus;
-typedef struct _FridaBootstrapContext FridaBootstrapContext;
-typedef struct _FridaLoaderContext FridaLoaderContext;
-typedef struct _FridaLibcApi FridaLibcApi;
-typedef uint8_t FridaMessageType;
-typedef struct _FridaHelloMessage FridaHelloMessage;
-typedef struct _FridaByeMessage FridaByeMessage;
-typedef int FridaRtldFlavor;
+typedef size_t SundayBootstrapStatus;
+typedef struct _SundayBootstrapContext SundayBootstrapContext;
+typedef struct _SundayLoaderContext SundayLoaderContext;
+typedef struct _SundayLibcApi SundayLibcApi;
+typedef uint8_t SundayMessageType;
+typedef struct _SundayHelloMessage SundayHelloMessage;
+typedef struct _SundayByeMessage SundayByeMessage;
+typedef int SundayRtldFlavor;
 
-enum _FridaBootstrapStatus
+enum _SundayBootstrapStatus
 {
-  FRIDA_BOOTSTRAP_ALLOCATION_SUCCESS,
-  FRIDA_BOOTSTRAP_ALLOCATION_ERROR,
+  SUNDAY_BOOTSTRAP_ALLOCATION_SUCCESS,
+  SUNDAY_BOOTSTRAP_ALLOCATION_ERROR,
 
-  FRIDA_BOOTSTRAP_SUCCESS,
-  FRIDA_BOOTSTRAP_AUXV_NOT_FOUND,
-  FRIDA_BOOTSTRAP_TOO_EARLY,
-  FRIDA_BOOTSTRAP_LIBC_LOAD_ERROR,
-  FRIDA_BOOTSTRAP_LIBC_UNSUPPORTED,
+  SUNDAY_BOOTSTRAP_SUCCESS,
+  SUNDAY_BOOTSTRAP_AUXV_NOT_FOUND,
+  SUNDAY_BOOTSTRAP_TOO_EARLY,
+  SUNDAY_BOOTSTRAP_LIBC_LOAD_ERROR,
+  SUNDAY_BOOTSTRAP_LIBC_UNSUPPORTED,
 };
 
-struct _FridaBootstrapContext
+struct _SundayBootstrapContext
 {
   void * allocation_base;
   size_t allocation_size;
@@ -48,28 +48,28 @@ struct _FridaBootstrapContext
   size_t page_size;
   const char * fallback_ld;
   const char * fallback_libc;
-  FridaRtldFlavor rtld_flavor;
+  SundayRtldFlavor rtld_flavor;
   void * rtld_base;
   void * r_brk;
   int enable_ctrlfds;
   int ctrlfds[2];
-  FridaLibcApi * libc;
+  SundayLibcApi * libc;
 };
 
-struct _FridaLoaderContext
+struct _SundayLoaderContext
 {
   int ctrlfds[2];
   const char * agent_entrypoint;
   const char * agent_data;
   const char * fallback_address;
-  FridaLibcApi * libc;
+  SundayLibcApi * libc;
 
   pthread_t worker;
   void * agent_handle;
   void (* agent_entrypoint_impl) (const char * data, int * unload_policy, void * injector_state);
 };
 
-struct _FridaLibcApi
+struct _SundayLibcApi
 {
   int (* printf) (const char * format, ...);
   int (* sprintf) (char * str, const char * format, ...);
@@ -94,34 +94,34 @@ struct _FridaLibcApi
   char * (* dlerror) (void);
 };
 
-enum _FridaMessageType
+enum _SundayMessageType
 {
-  FRIDA_MESSAGE_HELLO,
-  FRIDA_MESSAGE_READY,
-  FRIDA_MESSAGE_ACK,
-  FRIDA_MESSAGE_BYE,
-  FRIDA_MESSAGE_ERROR_DLOPEN,
-  FRIDA_MESSAGE_ERROR_DLSYM,
+  SUNDAY_MESSAGE_HELLO,
+  SUNDAY_MESSAGE_READY,
+  SUNDAY_MESSAGE_ACK,
+  SUNDAY_MESSAGE_BYE,
+  SUNDAY_MESSAGE_ERROR_DLOPEN,
+  SUNDAY_MESSAGE_ERROR_DLSYM,
 };
 
-struct _FridaHelloMessage
+struct _SundayHelloMessage
 {
   pid_t thread_id;
 };
 
-struct _FridaByeMessage
+struct _SundayByeMessage
 {
   int unload_policy;
 };
 
-enum _FridaRtldFlavor
+enum _SundayRtldFlavor
 {
-  FRIDA_RTLD_UNKNOWN,
-  FRIDA_RTLD_NONE,
-  FRIDA_RTLD_GLIBC,
-  FRIDA_RTLD_UCLIBC,
-  FRIDA_RTLD_MUSL,
-  FRIDA_RTLD_ANDROID,
+  SUNDAY_RTLD_UNKNOWN,
+  SUNDAY_RTLD_NONE,
+  SUNDAY_RTLD_GLIBC,
+  SUNDAY_RTLD_UCLIBC,
+  SUNDAY_RTLD_MUSL,
+  SUNDAY_RTLD_ANDROID,
 };
 
 #endif

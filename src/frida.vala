@@ -1,5 +1,5 @@
 [CCode (gir_namespace = "Frida", gir_version = "1.0")]
-namespace Frida {
+namespace Sunday {
 	public extern void init ();
 	public extern void init_with_runtime (Runtime runtime);
 	public extern void shutdown ();
@@ -2231,7 +2231,7 @@ namespace Frida {
 		private uint nice_registration_id;
 		private Cancellable? nice_cancellable;
 
-		private MainContext? frida_context;
+		private MainContext? sunday_context;
 		private MainContext? dbus_context;
 #endif
 
@@ -2523,7 +2523,7 @@ namespace Frida {
 		private async void do_setup_peer_connection (PeerOptions? options, Cancellable? cancellable) throws Error, IOError {
 			AgentSession server_session = active_session;
 
-			frida_context = get_main_context ();
+			sunday_context = get_main_context ();
 			dbus_context = yield get_dbus_context ();
 
 			var agent = new Nice.Agent.full (dbus_context, Nice.Compatibility.RFC5245, ICE_TRICKLE);
@@ -2655,7 +2655,7 @@ namespace Frida {
 				schedule_on_dbus_thread (() => {
 					agent.close_async.begin ();
 
-					schedule_on_frida_thread (() => {
+					schedule_on_sunday_thread (() => {
 						teardown_peer_connection.callback ();
 						return false;
 					});
@@ -2706,7 +2706,7 @@ namespace Frida {
 							var stolen_candidates = pending_candidates;
 							pending_candidates = new Gee.ArrayList<string> ();
 
-							schedule_on_frida_thread (() => {
+							schedule_on_sunday_thread (() => {
 								if (nice_agent == null)
 									return false;
 
@@ -2723,7 +2723,7 @@ namespace Frida {
 
 				gathering_handler = agent.candidate_gathering_done.connect (stream_id => {
 					schedule_on_dbus_thread (() => {
-						schedule_on_frida_thread (() => {
+						schedule_on_sunday_thread (() => {
 							if (nice_agent == null)
 								return false;
 							server_session.notify_candidate_gathering_done.begin (nice_cancellable);
@@ -2754,7 +2754,7 @@ namespace Frida {
 
 				nice_iostream = new SctpConnection (tc, answer.setup, answer.sctp_port, answer.max_message_size);
 
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					promise.resolve (nice_iostream);
 					return false;
 				});
@@ -2763,7 +2763,7 @@ namespace Frida {
 					? "Unable to establish peer connection"
 					: e.message;
 				Error error = new Error.TRANSPORT ("%s", message);
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					nice_component_id = 0;
 					nice_stream_id = 0;
 					nice_cancellable = null;
@@ -2843,10 +2843,10 @@ namespace Frida {
 			}
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
-			source.attach (frida_context);
+			source.attach (sunday_context);
 		}
 
 		private void schedule_on_dbus_thread (owned SourceFunc function) {

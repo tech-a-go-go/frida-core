@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public interface PolicySoftener : Object {
 		public abstract void soften (uint pid) throws Error;
 		public abstract void retain (uint pid) throws Error;

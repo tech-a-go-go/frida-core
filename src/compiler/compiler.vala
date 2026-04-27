@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class Compiler : Object {
 		public signal void starting ();
 		public signal void finished ();
@@ -20,7 +20,7 @@ namespace Frida {
 		}
 
 		construct {
-			main_context = Frida.get_main_context ();
+			main_context = Sunday.get_main_context ();
 		}
 
 		~Compiler () {
@@ -41,7 +41,7 @@ namespace Frida {
 				CompilerBackend.BuildCompleteFunc on_complete = (b, e) => {
 					bundle = b;
 					error_message = e;
-					schedule_on_frida_thread (build.callback);
+					schedule_on_sunday_thread (build.callback);
 				};
 
 				CompilerBackend.build (project_root, entrypoint, opts.output_format, opts.bundle_format,
@@ -92,7 +92,7 @@ namespace Frida {
 			CompilerBackend.WatchReadyFunc on_ready = (h, e) => {
 				session_handle = h;
 				error_message = e;
-				schedule_on_frida_thread (watch.callback);
+				schedule_on_sunday_thread (watch.callback);
 			};
 
 			CompilerBackend.watch (project_root, entrypoint, opts.output_format, opts.bundle_format,
@@ -133,21 +133,21 @@ namespace Frida {
 		}
 
 		private void on_starting () {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				starting ();
 				return Source.REMOVE;
 			});
 		}
 
 		private void on_finished () {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				finished ();
 				return Source.REMOVE;
 			});
 		}
 
 		private void on_output (owned string bundle) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				output (bundle);
 				return Source.REMOVE;
 			});
@@ -171,7 +171,7 @@ namespace Frida {
 			}
 
 			if (schedule_emit) {
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					emit_pending_diagnostics ();
 					return Source.REMOVE;
 				});
@@ -209,7 +209,7 @@ namespace Frida {
 			return Object.new (typeof (T), parent: this);
 		}
 
-		protected void schedule_on_frida_thread (owned SourceFunc function) {
+		protected void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);
@@ -243,17 +243,17 @@ namespace Frida {
 #elif COMPILER_BACKEND_INSTALLED_LIBRARY
 			Module? backend = null;
 			try {
-				backend = new Module (Frida.compiler_backend_path, LOCAL);
+				backend = new Module (Sunday.compiler_backend_path, LOCAL);
 			} catch (ModuleError e) {
 				return;
 			}
 			backend.make_resident ();
 
-			build = resolve_symbol (backend, "_frida_compiler_backend_build");
-			watch = resolve_symbol (backend, "_frida_compiler_backend_watch");
-			WatchSession.dispose = resolve_symbol (backend, "_frida_compiler_backend_watch_session_dispose");
+			build = resolve_symbol (backend, "_sunday_compiler_backend_build");
+			watch = resolve_symbol (backend, "_sunday_compiler_backend_watch");
+			WatchSession.dispose = resolve_symbol (backend, "_sunday_compiler_backend_watch_session_dispose");
 #elif COMPILER_BACKEND_EMBEDDED_LIBRARY
-			unowned uint8[] backend_so = Frida.Data.Compiler.get_frida_compiler_backend_so_blob ().data;
+			unowned uint8[] backend_so = Sunday.Data.Compiler.get_sunday_compiler_backend_so_blob ().data;
 
 			Module? backend = null;
 
@@ -286,9 +286,9 @@ namespace Frida {
 			}
 			backend.make_resident ();
 
-			build = resolve_symbol (backend, "_frida_compiler_backend_build");
-			watch = resolve_symbol (backend, "_frida_compiler_backend_watch");
-			WatchSession.dispose = resolve_symbol (backend, "_frida_compiler_backend_watch_session_dispose");
+			build = resolve_symbol (backend, "_sunday_compiler_backend_build");
+			watch = resolve_symbol (backend, "_sunday_compiler_backend_watch");
+			WatchSession.dispose = resolve_symbol (backend, "_sunday_compiler_backend_watch_session_dispose");
 #elif COMPILER_BACKEND_EMBEDDED_EXECUTABLE || COMPILER_BACKEND_INSTALLED_EXECUTABLE
 			backend_process = new BackendProcess ();
 
@@ -304,7 +304,7 @@ namespace Frida {
 #if COMPILER_BACKEND_INSTALLED_LIBRARY || COMPILER_BACKEND_INSTALLED_EXECUTABLE
 				throw new Error.NOT_SUPPORTED (
 					"Compiler backend plugin not installed; expected at: %s",
-					Frida.compiler_backend_path);
+					Sunday.compiler_backend_path);
 #else
 				throw new Error.NOT_SUPPORTED ("Compiler backend disabled at build-time");
 #endif
@@ -414,7 +414,7 @@ namespace Frida {
 					return;
 
 #if COMPILER_BACKEND_INSTALLED_EXECUTABLE
-				unowned string path = Frida.compiler_backend_path;
+				unowned string path = Sunday.compiler_backend_path;
 				bool unlink_after = false;
 #else
 				string path = extract_backend_executable ();
@@ -441,7 +441,7 @@ namespace Frida {
 
 #if COMPILER_BACKEND_EMBEDDED_EXECUTABLE
 			private static string extract_backend_executable () throws GLib.Error {
-				unowned uint8[] blob = Frida.Data.Compiler.get_frida_compiler_backend_blob ().data;
+				unowned uint8[] blob = Sunday.Data.Compiler.get_sunday_compiler_backend_blob ().data;
 
 				string path;
 				{

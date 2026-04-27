@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone {
 	public async Allocation inject_elf (Gum.ElfModule elf, Bytes raw_elf, size_t page_size, Machine machine, Allocator allocator,
 			Cancellable? cancellable) throws Error, IOError {
 		size_t vm_size = (size_t) elf.mapped_size;

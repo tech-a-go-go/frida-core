@@ -5,7 +5,7 @@
 #include <windows.h>
 
 gchar *
-_frida_query_windows_version (void)
+_sunday_query_windows_version (void)
 {
   NTSTATUS (WINAPI * rtl_get_version) (PRTL_OSVERSIONINFOW info);
   RTL_OSVERSIONINFOW info = { 0, };
@@ -19,7 +19,7 @@ _frida_query_windows_version (void)
 }
 
 gchar *
-_frida_query_windows_computer_name (void)
+_sunday_query_windows_computer_name (void)
 {
   WCHAR buffer[MAX_COMPUTERNAME_LENGTH + 1] = { 0, };
   DWORD buffer_size;
@@ -36,7 +36,7 @@ _frida_query_windows_computer_name (void)
 #include <dlfcn.h>
 
 GVariant *
-_frida_query_mobile_gestalt (const gchar * query)
+_sunday_query_mobile_gestalt (const gchar * query)
 {
   GVariant * result = NULL;
   static CFTypeRef (* mg_copy_answer) (CFStringRef query) = NULL;
@@ -124,7 +124,7 @@ beach:
 #include <sys/system_properties.h>
 
 gchar *
-_frida_query_android_system_property (const gchar * name)
+_sunday_query_android_system_property (const gchar * name)
 {
   gchar buffer[PROP_VALUE_MAX] = { 0, };
 

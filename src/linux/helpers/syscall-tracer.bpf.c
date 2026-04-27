@@ -27,11 +27,11 @@
 
 #define SYSCALL_NARGS 6
 
-#ifdef FRIDA_HAS_COMPAT32
+#ifdef SUNDAY_HAS_COMPAT32
 # if defined (__TARGET_ARCH_x86)
-#  define FRIDA_TIF_COMPAT32 29
+#  define SUNDAY_TIF_COMPAT32 29
 # elif defined (__TARGET_ARCH_arm64)
-#  define FRIDA_TIF_COMPAT32 22
+#  define SUNDAY_TIF_COMPAT32 22
 # endif
 #endif
 
@@ -558,10 +558,10 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
   if (!ensure_process_state (tgid, tid, abi, &map_gen))
     return 0;
 
-  if (nr == FRIDA_LINUX_SYSCALL_OPENAT ||
-      nr == FRIDA_LINUX_SYSCALL_FACCESSAT ||
-      nr == FRIDA_LINUX_SYSCALL_STATFS ||
-      nr == FRIDA_LINUX_SYSCALL_READLINKAT)
+  if (nr == SUNDAY_LINUX_SYSCALL_OPENAT ||
+      nr == SUNDAY_LINUX_SYSCALL_FACCESSAT ||
+      nr == SUNDAY_LINUX_SYSCALL_STATFS ||
+      nr == SUNDAY_LINUX_SYSCALL_READLINKAT)
   {
     SyscallEnterEventPath * ev = reserve_syscall_event (sizeof (SyscallEnterEventPath));
     if (ev == NULL)
@@ -570,7 +570,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-    if (nr == FRIDA_LINUX_SYSCALL_STATFS)
+    if (nr == SUNDAY_LINUX_SYSCALL_STATFS)
     {
       write_attach_str_arg (&ev->attach, 0, &ev->data[0], MAX_PATH, (void *) ctx->args[0]);
       maybe_schedule_stat_out_copy (tid, nr, 1, (__u64) ctx->args[1], MAX_STAT);
@@ -582,7 +582,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
 
     ev->parent.parent.parent.attachment_count = 1;
 
-    if (nr == FRIDA_LINUX_SYSCALL_READLINKAT)
+    if (nr == SUNDAY_LINUX_SYSCALL_READLINKAT)
     {
       maybe_schedule_str_out_copy (tid, nr, 2, (__u64) ctx->args[2], (__u32) ctx->args[3]);
     }
@@ -592,10 +592,10 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
   }
 
   if (
-#ifdef FRIDA_LINUX_SYSCALL_NEWFSTATAT
-      nr == FRIDA_LINUX_SYSCALL_NEWFSTATAT ||
+#ifdef SUNDAY_LINUX_SYSCALL_NEWFSTATAT
+      nr == SUNDAY_LINUX_SYSCALL_NEWFSTATAT ||
 #endif
-      nr == FRIDA_LINUX_SYSCALL_STATX)
+      nr == SUNDAY_LINUX_SYSCALL_STATX)
   {
     SyscallEnterEventPath * ev = reserve_syscall_event (sizeof (SyscallEnterEventPath));
     if (ev == NULL)
@@ -604,8 +604,8 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-#ifdef FRIDA_LINUX_SYSCALL_NEWFSTATAT
-    if (nr == FRIDA_LINUX_SYSCALL_NEWFSTATAT)
+#ifdef SUNDAY_LINUX_SYSCALL_NEWFSTATAT
+    if (nr == SUNDAY_LINUX_SYSCALL_NEWFSTATAT)
     {
       write_attach_str_arg (&ev->attach, 1, &ev->data[0], MAX_PATH, (void *) ctx->args[1]);
       ev->parent.parent.parent.attachment_count = 1;
@@ -625,9 +625,9 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     return 0;
   }
 
-  if (nr == FRIDA_LINUX_SYSCALL_FSTATFS ||
-        nr == FRIDA_LINUX_SYSCALL_FSTAT ||
-        nr == FRIDA_LINUX_SYSCALL_STATMOUNT)
+  if (nr == SUNDAY_LINUX_SYSCALL_FSTATFS ||
+        nr == SUNDAY_LINUX_SYSCALL_FSTAT ||
+        nr == SUNDAY_LINUX_SYSCALL_STATMOUNT)
   {
     SyscallEnterEventNone * ev = reserve_syscall_event (sizeof (SyscallEnterEventNone));
     if (ev == NULL)
@@ -636,11 +636,11 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-    if (nr == FRIDA_LINUX_SYSCALL_FSTATFS)
+    if (nr == SUNDAY_LINUX_SYSCALL_FSTATFS)
     {
       maybe_schedule_stat_out_copy (tid, nr, 1, (__u64) ctx->args[1], MAX_STAT);
     }
-    else if (nr == FRIDA_LINUX_SYSCALL_FSTAT)
+    else if (nr == SUNDAY_LINUX_SYSCALL_FSTAT)
     {
       maybe_schedule_stat_out_copy (tid, nr, 1, (__u64) ctx->args[1], MAX_STAT);
     }
@@ -658,21 +658,21 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
   }
 
   if (
-#ifdef FRIDA_LINUX_SYSCALL_RENAME
-      nr == FRIDA_LINUX_SYSCALL_RENAME ||
+#ifdef SUNDAY_LINUX_SYSCALL_RENAME
+      nr == SUNDAY_LINUX_SYSCALL_RENAME ||
 #endif
-#ifdef FRIDA_LINUX_SYSCALL_RENAMEAT
-      nr == FRIDA_LINUX_SYSCALL_RENAMEAT ||
+#ifdef SUNDAY_LINUX_SYSCALL_RENAMEAT
+      nr == SUNDAY_LINUX_SYSCALL_RENAMEAT ||
 #endif
-      nr == FRIDA_LINUX_SYSCALL_RENAMEAT2 ||
-#ifdef FRIDA_LINUX_SYSCALL_LINK
-      nr == FRIDA_LINUX_SYSCALL_LINK ||
+      nr == SUNDAY_LINUX_SYSCALL_RENAMEAT2 ||
+#ifdef SUNDAY_LINUX_SYSCALL_LINK
+      nr == SUNDAY_LINUX_SYSCALL_LINK ||
 #endif
-      nr == FRIDA_LINUX_SYSCALL_LINKAT ||
-#ifdef FRIDA_LINUX_SYSCALL_SYMLINK
-      nr == FRIDA_LINUX_SYSCALL_SYMLINK ||
+      nr == SUNDAY_LINUX_SYSCALL_LINKAT ||
+#ifdef SUNDAY_LINUX_SYSCALL_SYMLINK
+      nr == SUNDAY_LINUX_SYSCALL_SYMLINK ||
 #endif
-      nr == FRIDA_LINUX_SYSCALL_SYMLINKAT)
+      nr == SUNDAY_LINUX_SYSCALL_SYMLINKAT)
   {
     SyscallEnterEventPath2 * ev = reserve_syscall_event (sizeof (SyscallEnterEventPath2));
     if (ev == NULL)
@@ -683,34 +683,34 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
 
     switch (nr)
     {
-#ifdef FRIDA_LINUX_SYSCALL_RENAME
-      case FRIDA_LINUX_SYSCALL_RENAME:
+#ifdef SUNDAY_LINUX_SYSCALL_RENAME
+      case SUNDAY_LINUX_SYSCALL_RENAME:
         write_attach_str_arg (&ev->attach1, 0, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[0]);
         write_attach_str_arg (&ev->attach2, 1, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[1]);
         break;
 #endif
-#ifdef FRIDA_LINUX_SYSCALL_RENAMEAT
-      case FRIDA_LINUX_SYSCALL_RENAMEAT:
+#ifdef SUNDAY_LINUX_SYSCALL_RENAMEAT
+      case SUNDAY_LINUX_SYSCALL_RENAMEAT:
         write_attach_str_arg (&ev->attach1, 1, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[1]);
         write_attach_str_arg (&ev->attach2, 3, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[3]);
         break;
 #endif
-      case FRIDA_LINUX_SYSCALL_RENAMEAT2:
+      case SUNDAY_LINUX_SYSCALL_RENAMEAT2:
         write_attach_str_arg (&ev->attach1, 1, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[1]);
         write_attach_str_arg (&ev->attach2, 3, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[3]);
         break;
-#ifdef FRIDA_LINUX_SYSCALL_LINK
-      case FRIDA_LINUX_SYSCALL_LINK:
+#ifdef SUNDAY_LINUX_SYSCALL_LINK
+      case SUNDAY_LINUX_SYSCALL_LINK:
         write_attach_str_arg (&ev->attach1, 0, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[0]);
         write_attach_str_arg (&ev->attach2, 1, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[1]);
         break;
 #endif
-      case FRIDA_LINUX_SYSCALL_LINKAT:
+      case SUNDAY_LINUX_SYSCALL_LINKAT:
         write_attach_str_arg (&ev->attach1, 1, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[1]);
         write_attach_str_arg (&ev->attach2, 3, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[3]);
         break;
-#ifdef FRIDA_LINUX_SYSCALL_SYMLINK
-      case FRIDA_LINUX_SYSCALL_SYMLINK:
+#ifdef SUNDAY_LINUX_SYSCALL_SYMLINK
+      case SUNDAY_LINUX_SYSCALL_SYMLINK:
         write_attach_str_arg (&ev->attach1, 0, &ev->data1[0], MAX_PATH, (void *) ev->parent.args[0]);
         write_attach_str_arg (&ev->attach2, 1, &ev->data2[0], MAX_PATH, (void *) ev->parent.args[1]);
         break;
@@ -727,7 +727,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     return 0;
   }
 
-  if (nr == FRIDA_LINUX_SYSCALL_MOUNT)
+  if (nr == SUNDAY_LINUX_SYSCALL_MOUNT)
   {
     SyscallEnterEventPath3 * ev = reserve_syscall_event (sizeof (SyscallEnterEventPath3));
     if (ev == NULL)
@@ -746,8 +746,8 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     return 0;
   }
 
-  if (nr == FRIDA_LINUX_SYSCALL_NANOSLEEP ||
-      nr == FRIDA_LINUX_SYSCALL_CLOCK_NANOSLEEP)
+  if (nr == SUNDAY_LINUX_SYSCALL_NANOSLEEP ||
+      nr == SUNDAY_LINUX_SYSCALL_CLOCK_NANOSLEEP)
   {
     SyscallEnterEventTimespec * ev = reserve_syscall_event (sizeof (SyscallEnterEventTimespec));
     if (ev == NULL)
@@ -756,7 +756,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-    if (nr == FRIDA_LINUX_SYSCALL_NANOSLEEP)
+    if (nr == SUNDAY_LINUX_SYSCALL_NANOSLEEP)
     {
       __u64 rqtp = (__u64) ctx->args[0];
       if (rqtp != 0)
@@ -787,9 +787,9 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     return 0;
   }
 
-  if (nr == FRIDA_LINUX_SYSCALL_CONNECT ||
-      nr == FRIDA_LINUX_SYSCALL_BIND ||
-      nr == FRIDA_LINUX_SYSCALL_SENDTO)
+  if (nr == SUNDAY_LINUX_SYSCALL_CONNECT ||
+      nr == SUNDAY_LINUX_SYSCALL_BIND ||
+      nr == SUNDAY_LINUX_SYSCALL_SENDTO)
   {
     SyscallEnterEventSock * ev = reserve_syscall_event (sizeof (SyscallEnterEventSock));
     if (ev == NULL)
@@ -798,7 +798,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-    if (nr == FRIDA_LINUX_SYSCALL_SENDTO)
+    if (nr == SUNDAY_LINUX_SYSCALL_SENDTO)
     {
       __u64 user_addr = (__u64) ctx->args[4];
       __u32 addr_len = (__u32) ctx->args[5];
@@ -820,13 +820,13 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
   }
 
   if (
-#ifdef FRIDA_LINUX_SYSCALL_ACCEPT
-      nr == FRIDA_LINUX_SYSCALL_ACCEPT ||
+#ifdef SUNDAY_LINUX_SYSCALL_ACCEPT
+      nr == SUNDAY_LINUX_SYSCALL_ACCEPT ||
 #endif
-      nr == FRIDA_LINUX_SYSCALL_ACCEPT4 ||
-      nr == FRIDA_LINUX_SYSCALL_GETSOCKNAME ||
-      nr == FRIDA_LINUX_SYSCALL_GETPEERNAME ||
-      nr == FRIDA_LINUX_SYSCALL_RECVFROM)
+      nr == SUNDAY_LINUX_SYSCALL_ACCEPT4 ||
+      nr == SUNDAY_LINUX_SYSCALL_GETSOCKNAME ||
+      nr == SUNDAY_LINUX_SYSCALL_GETPEERNAME ||
+      nr == SUNDAY_LINUX_SYSCALL_RECVFROM)
   {
     SyscallEnterEventNone * ev = reserve_syscall_event (sizeof (SyscallEnterEventNone));
     if (ev == NULL)
@@ -835,7 +835,7 @@ on_sys_enter (struct trace_event_raw_sys_enter * ctx)
     fill_syscall_event (&ev->parent.parent, EVENT_TYPE_SYSCALL_ENTER, tgid, tid, nr, map_gen, ctx);
     fill_enter_args (ev->parent.args, ctx);
 
-    if (nr == FRIDA_LINUX_SYSCALL_RECVFROM)
+    if (nr == SUNDAY_LINUX_SYSCALL_RECVFROM)
     {
       maybe_schedule_sock_out_copy (tid, nr, 4, (__u64) ctx->args[4], (__u64) ctx->args[5], MAX_SOCK);
     }
@@ -932,18 +932,18 @@ on_sys_exit (struct trace_event_raw_sys_exit * ctx)
     bool ok;
     switch (nr)
     {
-      case FRIDA_LINUX_SYSCALL_NANOSLEEP:
-      case FRIDA_LINUX_SYSCALL_CLOCK_NANOSLEEP:
+      case SUNDAY_LINUX_SYSCALL_NANOSLEEP:
+      case SUNDAY_LINUX_SYSCALL_CLOCK_NANOSLEEP:
         ok = (ctx->ret == 0) || (ctx->ret == -EINTR);
         break;
 
-      case FRIDA_LINUX_SYSCALL_STATMOUNT:
-      case FRIDA_LINUX_SYSCALL_STATX:
-      case FRIDA_LINUX_SYSCALL_STATFS:
-      case FRIDA_LINUX_SYSCALL_FSTATFS:
-      case FRIDA_LINUX_SYSCALL_FSTAT:
-#ifdef FRIDA_LINUX_SYSCALL_NEWFSTATAT
-      case FRIDA_LINUX_SYSCALL_NEWFSTATAT:
+      case SUNDAY_LINUX_SYSCALL_STATMOUNT:
+      case SUNDAY_LINUX_SYSCALL_STATX:
+      case SUNDAY_LINUX_SYSCALL_STATFS:
+      case SUNDAY_LINUX_SYSCALL_FSTATFS:
+      case SUNDAY_LINUX_SYSCALL_FSTAT:
+#ifdef SUNDAY_LINUX_SYSCALL_NEWFSTATAT
+      case SUNDAY_LINUX_SYSCALL_NEWFSTATAT:
 #endif
         ok = (ctx->ret == 0);
         break;
@@ -998,15 +998,15 @@ on_sys_exit (struct trace_event_raw_sys_exit * ctx)
     bool ok;
     switch (nr)
     {
-#ifdef FRIDA_LINUX_SYSCALL_ACCEPT
-      case FRIDA_LINUX_SYSCALL_ACCEPT:
+#ifdef SUNDAY_LINUX_SYSCALL_ACCEPT
+      case SUNDAY_LINUX_SYSCALL_ACCEPT:
 #endif
-      case FRIDA_LINUX_SYSCALL_ACCEPT4:
-      case FRIDA_LINUX_SYSCALL_RECVFROM:
+      case SUNDAY_LINUX_SYSCALL_ACCEPT4:
+      case SUNDAY_LINUX_SYSCALL_RECVFROM:
         ok = ctx->ret >= 0;
         break;
-      case FRIDA_LINUX_SYSCALL_GETSOCKNAME:
-      case FRIDA_LINUX_SYSCALL_GETPEERNAME:
+      case SUNDAY_LINUX_SYSCALL_GETSOCKNAME:
+      case SUNDAY_LINUX_SYSCALL_GETPEERNAME:
         ok = ctx->ret == 0;
         break;
       default:
@@ -1173,11 +1173,11 @@ should_trace_current (__u32 * out_tgid, __u32 * out_tid)
 static Abi
 get_current_abi (void)
 {
-#ifdef FRIDA_TIF_COMPAT32
+#ifdef SUNDAY_TIF_COMPAT32
   struct task_struct * task = bpf_get_current_task_btf ();
   unsigned long flags = BPF_CORE_READ (task, thread_info.flags);
 
-  if (flags & (1UL << FRIDA_TIF_COMPAT32))
+  if (flags & (1UL << SUNDAY_TIF_COMPAT32))
     return ABI_COMPAT32;
 #endif
 

@@ -16,7 +16,7 @@
 #endif
 
 #ifdef HAVE_DARWIN
-static void frida_parse_apple_parameters (const gchar * apple[], gboolean * found_range, GumMemoryRange * range, gchar ** config_data);
+static void sunday_parse_apple_parameters (const gchar * apple[], gboolean * found_range, GumMemoryRange * range, gchar ** config_data);
 #endif
 
 static gpointer run_worker_loop (gpointer data);
@@ -35,13 +35,13 @@ DllMain (HINSTANCE instance, DWORD reason, LPVOID reserved)
   switch (reason)
   {
     case DLL_PROCESS_ATTACH:
-      frida_gadget_load (NULL, NULL, NULL);
+      sunday_gadget_load (NULL, NULL, NULL);
       break;
     case DLL_PROCESS_DETACH:
     {
       gboolean is_dynamic_unload = reserved == NULL;
       if (is_dynamic_unload)
-        frida_gadget_unload ();
+        sunday_gadget_unload ();
       break;
     }
     default:
@@ -54,15 +54,15 @@ DllMain (HINSTANCE instance, DWORD reason, LPVOID reserved)
 #elif defined (HAVE_DARWIN)
 
 __attribute__ ((constructor)) static void
-frida_on_load (int argc, const char * argv[], const char * envp[], const char * apple[], int * result)
+sunday_on_load (int argc, const char * argv[], const char * envp[], const char * apple[], int * result)
 {
   gboolean found_range;
   GumMemoryRange range;
   gchar * config_data;
 
-  frida_parse_apple_parameters (apple, &found_range, &range, &config_data);
+  sunday_parse_apple_parameters (apple, &found_range, &range, &config_data);
 
-  frida_gadget_load (found_range ? &range : NULL, config_data, (config_data != NULL) ? result : NULL);
+  sunday_gadget_load (found_range ? &range : NULL, config_data, (config_data != NULL) ? result : NULL);
 
   g_free (config_data);
 }
@@ -70,28 +70,28 @@ frida_on_load (int argc, const char * argv[], const char * envp[], const char * 
 #else
 
 __attribute__ ((constructor)) static void
-frida_on_load (void)
+sunday_on_load (void)
 {
-  frida_gadget_load (NULL, NULL, NULL);
+  sunday_gadget_load (NULL, NULL, NULL);
 }
 
 __attribute__ ((destructor)) static void
-frida_on_unload (void)
+sunday_on_unload (void)
 {
-  frida_gadget_unload ();
+  sunday_gadget_unload ();
 }
 
 #endif
 
 void
-frida_gadget_environment_init (void)
+sunday_gadget_environment_init (void)
 {
 #ifdef _MSC_VER
-  frida_libc_shim_init ();
+  sunday_libc_shim_init ();
 #endif
   gio_init ();
 
-  g_thread_set_garbage_handler (_frida_gadget_on_pending_thread_garbage, NULL);
+  g_thread_set_garbage_handler (_sunday_gadget_on_pending_thread_garbage, NULL);
 
 #if defined (HAVE_GIOAPPLE)
   g_io_module_apple_register ();
@@ -100,7 +100,7 @@ frida_gadget_environment_init (void)
 #endif
 
   gum_script_backend_get_type (); /* Warm up */
-  frida_error_quark (); /* Initialize early so GDBus will pick it up */
+  sunday_error_quark (); /* Initialize early so GDBus will pick it up */
 
 #if defined (HAVE_ANDROID) && __ANDROID_API__ < __ANDROID_API_L__
   /*
@@ -116,13 +116,13 @@ frida_gadget_environment_init (void)
 }
 
 void
-frida_gadget_environment_deinit (void)
+sunday_gadget_environment_deinit (void)
 {
   GSource * source;
 
   g_assert (worker_loop != NULL);
 
-  frida_libc_shim_prepare_to_deinit ();
+  sunday_libc_shim_prepare_to_deinit ();
 
   source = g_idle_source_new ();
   g_source_set_priority (source, G_PRIORITY_LOW);
@@ -145,15 +145,15 @@ frida_gadget_environment_deinit (void)
 
   gio_deinit ();
 
-  frida_run_atexit_handlers ();
+  sunday_run_atexit_handlers ();
 
 #if defined (_MSC_VER) || defined (HAVE_DARWIN)
-  frida_libc_shim_deinit ();
+  sunday_libc_shim_deinit ();
 #endif
 }
 
 gboolean
-frida_gadget_environment_can_block_at_load_time (void)
+sunday_gadget_environment_can_block_at_load_time (void)
 {
 #ifdef HAVE_WINDOWS
   return FALSE;
@@ -163,13 +163,13 @@ frida_gadget_environment_can_block_at_load_time (void)
 }
 
 GumThreadId
-frida_gadget_environment_get_worker_tid (void)
+sunday_gadget_environment_get_worker_tid (void)
 {
   return worker_tid;
 }
 
 GMainContext *
-frida_gadget_environment_get_worker_context (void)
+sunday_gadget_environment_get_worker_context (void)
 {
   return worker_context;
 }
@@ -177,31 +177,31 @@ frida_gadget_environment_get_worker_context (void)
 #ifndef HAVE_DARWIN
 
 gchar *
-frida_gadget_environment_detect_bundle_id (void)
+sunday_gadget_environment_detect_bundle_id (void)
 {
   return NULL;
 }
 
 gchar *
-frida_gadget_environment_detect_bundle_name (void)
+sunday_gadget_environment_detect_bundle_name (void)
 {
   return NULL;
 }
 
 gchar *
-frida_gadget_environment_detect_documents_dir (void)
+sunday_gadget_environment_detect_documents_dir (void)
 {
   return NULL;
 }
 
 gboolean
-frida_gadget_environment_has_objc_class (const gchar * name)
+sunday_gadget_environment_has_objc_class (const gchar * name)
 {
   return FALSE;
 }
 
 void
-frida_gadget_environment_set_thread_name (const gchar * name)
+sunday_gadget_environment_set_thread_name (const gchar * name)
 {
   /* For now only implemented on i/macOS as Fruity.Injector relies on it there. */
 }
@@ -229,13 +229,13 @@ stop_worker_loop (gpointer data)
 }
 
 void
-frida_gadget_log_info (const gchar * message)
+sunday_gadget_log_info (const gchar * message)
 {
   g_info ("%s", message);
 }
 
 void
-frida_gadget_log_warning (const gchar * message)
+sunday_gadget_log_warning (const gchar * message)
 {
   g_warning ("%s", message);
 }
@@ -243,7 +243,7 @@ frida_gadget_log_warning (const gchar * message)
 #ifdef HAVE_DARWIN
 
 static void
-frida_parse_apple_parameters (const gchar * apple[], gboolean * found_range, GumMemoryRange * range, gchar ** config_data)
+sunday_parse_apple_parameters (const gchar * apple[], gboolean * found_range, GumMemoryRange * range, gchar ** config_data)
 {
   const gchar * entry;
   guint i = 0;
@@ -253,12 +253,12 @@ frida_parse_apple_parameters (const gchar * apple[], gboolean * found_range, Gum
 
   while ((entry = apple[i++]) != NULL)
   {
-    if (g_str_has_prefix (entry, "frida_dylib_range="))
+    if (g_str_has_prefix (entry, "sunday_dylib_range="))
     {
-      *found_range = sscanf (entry, "frida_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
+      *found_range = sscanf (entry, "sunday_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
           &range->base_address, &range->size) == 2;
     }
-    else if (g_str_has_prefix (entry, "frida_gadget_config="))
+    else if (g_str_has_prefix (entry, "sunday_gadget_config="))
     {
       guchar * data;
       gsize size;

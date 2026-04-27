@@ -1,8 +1,8 @@
-namespace Frida {
+namespace Sunday {
 	namespace System {
-		public extern static Frida.HostApplicationInfo get_frontmost_application (FrontmostQueryOptions options) throws Error;
-		public extern static Frida.HostApplicationInfo[] enumerate_applications (ApplicationQueryOptions options);
-		public extern static Frida.HostProcessInfo[] enumerate_processes (ProcessQueryOptions options);
+		public extern static Sunday.HostApplicationInfo get_frontmost_application (FrontmostQueryOptions options) throws Error;
+		public extern static Sunday.HostApplicationInfo[] enumerate_applications (ApplicationQueryOptions options);
+		public extern static Sunday.HostProcessInfo[] enumerate_processes (ProcessQueryOptions options);
 		public extern static void kill (uint pid);
 	}
 

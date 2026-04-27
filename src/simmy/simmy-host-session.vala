@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class SimmyHostSessionBackend : Object, HostSessionBackend {
 		private Gee.Map<string, SimmyHostSessionProvider> providers = new Gee.HashMap<string, SimmyHostSessionProvider> ();
 
@@ -13,14 +13,14 @@ namespace Frida {
 
 		public async void start (Cancellable? cancellable) throws IOError {
 			simmy_context = _start (on_device_added, () => {
-				schedule_on_frida_thread (start.callback);
+				schedule_on_sunday_thread (start.callback);
 			});
 			yield;
 		}
 
 		public async void stop (Cancellable? cancellable) throws IOError {
 			_stop (simmy_context, () => {
-				schedule_on_frida_thread (stop.callback);
+				schedule_on_sunday_thread (stop.callback);
 			});
 			yield;
 			simmy_context = null;
@@ -35,7 +35,7 @@ namespace Frida {
 		}
 
 		private void on_device_added (Simmy.Device device) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				var prov = new SimmyHostSessionProvider (device);
 				providers[device.udid] = prov;
 				provider_available (prov);
@@ -44,7 +44,7 @@ namespace Frida {
 			});
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);
@@ -84,7 +84,7 @@ namespace Frida {
 		private SimmyHostSession? host_session;
 
 		static construct {
-			_icon = make_provider_icon (Frida.Data.Icons.get_simmy_png_blob ().data);
+			_icon = make_provider_icon (Sunday.Data.Icons.get_simmy_png_blob ().data);
 		}
 
 		public SimmyHostSessionProvider (Simmy.Device device) {
@@ -632,7 +632,7 @@ namespace Frida {
 		}
 
 		protected override async string? load_source (Cancellable? cancellable) throws Error, IOError {
-			return (string) Frida.Data.Simmy.get_springboard_js_blob ().data;
+			return (string) Sunday.Data.Simmy.get_springboard_js_blob ().data;
 		}
 	}
 
@@ -647,7 +647,7 @@ namespace Frida {
 		parameters["icons"] = icons.end ();
 	}
 
-	[CCode (gir_namespace = "FridaSimmy", gir_version = "1.0")]
+	[CCode (gir_namespace = "SundaySimmy", gir_version = "1.0")]
 	namespace Simmy {
 		public sealed class Device : Object {
 			public void * handle {

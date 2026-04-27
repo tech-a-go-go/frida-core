@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class FruityHostSessionBackend : Object, HostSessionBackend {
 		private Fruity.DeviceMonitor device_monitor = new Fruity.DeviceMonitor ();
 		private Gee.Map<Fruity.Device, FruityHostSessionProvider> providers =
@@ -73,7 +73,7 @@ namespace Frida {
 		private static Variant _network_icon;
 
 		static construct {
-			_network_icon = make_provider_icon (Frida.Data.Icons.get_fruity_network_png_blob ().data);
+			_network_icon = make_provider_icon (Sunday.Data.Icons.get_fruity_network_png_blob ().data);
 		}
 
 		public FruityHostSessionProvider (Fruity.Device device) {
@@ -219,7 +219,7 @@ namespace Frida {
 		private Cancellable io_cancellable = new Cancellable ();
 
 		private const double MIN_SERVER_CHECK_INTERVAL = 5.0;
-		private const string GADGET_APP_ID = "re.frida.Gadget";
+		private const string GADGET_APP_ID = "re.sunday.Gadget";
 		private const string DEBUGSERVER_ENDPOINT_17PLUS = "com.apple.internal.dt.remote.debugproxy";
 		private const string DEBUGSERVER_ENDPOINT_14PLUS = "com.apple.debugserver.DVTSecureSocketProxy";
 		private const string DEBUGSERVER_ENDPOINT_LEGACY = "com.apple.debugserver?tls=handshake-only";
@@ -1572,7 +1572,7 @@ namespace Frida {
 			}
 
 			private async void handle_exception (GDB.Exception exception) throws Error, IOError {
-				var e = (Frida.LLDB.Exception) exception;
+				var e = (Sunday.LLDB.Exception) exception;
 
 				var sig = (LLDB.Signal) e.signum;
 				var medata = e.medata;

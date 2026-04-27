@@ -6,11 +6,11 @@
 #endif
 
 void
-frida_inject_environment_init (void)
+sunday_inject_environment_init (void)
 {
-  frida_init_with_runtime (FRIDA_RUNTIME_GLIB);
+  sunday_init_with_runtime (SUNDAY_RUNTIME_GLIB);
 
 #ifdef HAVE_ANDROID
-  frida_selinux_patch_policy ();
+  sunday_selinux_patch_policy ();
 #endif
 }

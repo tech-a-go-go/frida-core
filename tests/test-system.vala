@@ -1,4 +1,4 @@
-namespace Frida.SystemTest {
+namespace Sunday.SystemTest {
 	public static void add_tests () {
 		GLib.Test.add_func ("/System/enumerate-processes-returns-processes-with-icons", () => {
 			var options = new ProcessQueryOptions ();
@@ -10,8 +10,8 @@ namespace Frida.SystemTest {
 
 			assert_true (processes.length > 0);
 
-			switch (Frida.Test.os ()) {
-				case Frida.Test.OS.WINDOWS:
+			switch (Sunday.Test.os ()) {
+				case Sunday.Test.OS.WINDOWS:
 					int num_icons_seen = 0;
 					foreach (var p in processes) {
 						if (p.parameters.contains ("icons"))

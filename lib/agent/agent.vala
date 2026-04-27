@@ -1,6 +1,6 @@
-namespace Frida.Agent {
+namespace Sunday.Agent {
 	[CCode (cname = "sunday_agent_main")]
-	public void main (string agent_parameters, ref Frida.UnloadPolicy unload_policy, void * injector_state) {
+	public void main (string agent_parameters, ref Sunday.UnloadPolicy unload_policy, void * injector_state) {
 		if (Runner.shared_instance == null)
 			Runner.create_and_run (agent_parameters, ref unload_policy, injector_state);
 		else
@@ -114,7 +114,7 @@ namespace Frida.Agent {
 			CHILD
 		}
 
-		public static void create_and_run (string agent_parameters, ref Frida.UnloadPolicy unload_policy,
+		public static void create_and_run (string agent_parameters, ref Sunday.UnloadPolicy unload_policy,
 				void * opaque_injector_state) {
 			Environment._init ();
 
@@ -156,7 +156,7 @@ namespace Frida.Agent {
 				}
 #endif
 
-				var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+				var ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 
 				shared_instance = new Runner (agent_parameters, cached_agent_path, cached_agent_range);
 
@@ -187,7 +187,7 @@ namespace Frida.Agent {
 			Environment._deinit ();
 		}
 
-		public static void resume_after_transition (ref Frida.UnloadPolicy unload_policy, void * opaque_injector_state) {
+		public static void resume_after_transition (ref Sunday.UnloadPolicy unload_policy, void * opaque_injector_state) {
 			{
 #if LINUX || FREEBSD
 				var injector_state = (PosixInjectorState *) opaque_injector_state;
@@ -197,7 +197,7 @@ namespace Frida.Agent {
 				}
 #endif
 
-				var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+				var ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 
 				shared_instance.run_after_transition ();
 
@@ -345,7 +345,7 @@ namespace Frida.Agent {
 
 		private void keep_running_eternalized () {
 			agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-				var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+				var ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 
 				agent_tid = Gum.Process.get_current_thread_id ();
 
@@ -541,7 +541,7 @@ namespace Frida.Agent {
 				}
 			} else {
 				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+					var ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 					run_after_transition ();
 					ignore_scope = null;
 
@@ -649,7 +649,7 @@ namespace Frida.Agent {
 				}
 			} else {
 				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+					var ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 					run_after_transition ();
 					ignore_scope = null;
 
@@ -1635,7 +1635,7 @@ namespace Frida.Agent {
 				id: id,
 				persist_timeout: persist_timeout,
 				message_sink: sink,
-				frida_context: MainContext.ref_thread_default (),
+				sunday_context: MainContext.ref_thread_default (),
 				dbus_context: dbus_context
 			);
 		}

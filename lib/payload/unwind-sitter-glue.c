@@ -7,32 +7,32 @@
 #include <gum/gummemory.h>
 #include <ptrauth.h>
 
-#define FRIDA_MH_MAGIC_64 0xfeedfacf
-#define FRIDA_LIBUNWIND_PATH "/usr/lib/system/libunwind.dylib"
-#define FRIDA_UNWIND_CURSOR_VTABLE_OFFSET_SET_INFO 0x68
-#define FRIDA_UNWIND_CURSOR_VTABLE_OFFSET_GET_REG 0x18
-#define FRIDA_FP_TO_SP(fp) (fp + 0x10)
+#define SUNDAY_MH_MAGIC_64 0xfeedfacf
+#define SUNDAY_LIBUNWIND_PATH "/usr/lib/system/libunwind.dylib"
+#define SUNDAY_UNWIND_CURSOR_VTABLE_OFFSET_SET_INFO 0x68
+#define SUNDAY_UNWIND_CURSOR_VTABLE_OFFSET_GET_REG 0x18
+#define SUNDAY_FP_TO_SP(fp) (fp + 0x10)
 #ifdef HAVE_ARM64
-# define FRIDA_UNWIND_CURSOR_unwindInfoMissing 0x268
-# define FRIDA_UNWAARCH64_X29 29
-# define FRIDA_STRIP_MASK 0x0000007fffffffffULL
+# define SUNDAY_UNWIND_CURSOR_unwindInfoMissing 0x268
+# define SUNDAY_UNWAARCH64_X29 29
+# define SUNDAY_STRIP_MASK 0x0000007fffffffffULL
 #else
-# define FRIDA_UNWIND_CURSOR_unwindInfoMissing 0x100
-# define FRIDA_UNWX86_64_RBP 6
+# define SUNDAY_UNWIND_CURSOR_unwindInfoMissing 0x100
+# define SUNDAY_UNWX86_64_RBP 6
 #endif
 
-typedef struct _FridaFillInfoContext FridaFillInfoContext;
-typedef struct _FridaDyldUnwindSections FridaDyldUnwindSections;
-typedef struct _FridaCreateArgs FridaCreateArgs;
-typedef struct _FridaUnwindHookState FridaUnwindHookState;
+typedef struct _SundayFillInfoContext SundayFillInfoContext;
+typedef struct _SundayDyldUnwindSections SundayDyldUnwindSections;
+typedef struct _SundayCreateArgs SundayCreateArgs;
+typedef struct _SundayUnwindHookState SundayUnwindHookState;
 
-struct _FridaFillInfoContext
+struct _SundayFillInfoContext
 {
-  FridaDyldUnwindSections * info;
+  SundayDyldUnwindSections * info;
   guint missing_info;
 };
 
-struct _FridaDyldUnwindSections
+struct _SundayDyldUnwindSections
 {
   const void * mh;
   const void * dwarf_section;
@@ -41,13 +41,13 @@ struct _FridaDyldUnwindSections
   uintptr_t compact_unwind_section_length;
 };
 
-struct _FridaCreateArgs
+struct _SundayCreateArgs
 {
   GumAddress range_start;
   GumAddress range_end;
 };
 
-struct _FridaUnwindHookState
+struct _SundayUnwindHookState
 {
   gpointer vtable;
   gssize shift;
@@ -59,41 +59,41 @@ struct _FridaUnwindHookState
 };
 
 #if __has_feature (ptrauth_calls)
-# define FRIDA_RESIGN_PTR(x) GSIZE_TO_POINTER (gum_sign_code_address (gum_strip_code_address (GUM_ADDRESS (x))))
+# define SUNDAY_RESIGN_PTR(x) GSIZE_TO_POINTER (gum_sign_code_address (gum_strip_code_address (GUM_ADDRESS (x))))
 #else
-# define FRIDA_RESIGN_PTR(x) (x)
+# define SUNDAY_RESIGN_PTR(x) (x)
 #endif
 
-static FridaDyldUnwindSections * frida_get_cached_sections (GumAddress range_start, GumAddress range_end);
-static FridaDyldUnwindSections * frida_create_cached_sections (FridaCreateArgs * args);
-static gboolean frida_fill_info (const GumDarwinSectionDetails * details, FridaFillInfoContext * ctx);
-static void frida_unwind_cursor_set_info_replacement (gpointer cursor, gint is_return_address);
-static gpointer frida_find_vtable (void);
-static gboolean frida_compute_vtable_shift (gpointer vtable, gssize * shift);
+static SundayDyldUnwindSections * sunday_get_cached_sections (GumAddress range_start, GumAddress range_end);
+static SundayDyldUnwindSections * sunday_create_cached_sections (SundayCreateArgs * args);
+static gboolean sunday_fill_info (const GumDarwinSectionDetails * details, SundayFillInfoContext * ctx);
+static void sunday_unwind_cursor_set_info_replacement (gpointer cursor, gint is_return_address);
+static gpointer sunday_find_vtable (void);
+static gboolean sunday_compute_vtable_shift (gpointer vtable, gssize * shift);
 #ifdef HAVE_ARM64
-static gboolean frida_find_bss_range (const GumSectionDetails * details, GumMemoryRange * range);
+static gboolean sunday_find_bss_range (const GumSectionDetails * details, GumMemoryRange * range);
 #else
-static gboolean frida_is_empty_function (GumAddress address);
-static gboolean frida_has_first_match (GumAddress address, gsize size, gboolean * matches);
+static gboolean sunday_is_empty_function (GumAddress address);
+static gboolean sunday_has_first_match (GumAddress address, gsize size, gboolean * matches);
 #endif
 
-static FridaUnwindHookState * state = NULL;
+static SundayUnwindHookState * state = NULL;
 
 void
-_frida_unwind_sitter_fill_unwind_sections (GumAddress invader_start, GumAddress invader_end, void * info)
+_sunday_unwind_sitter_fill_unwind_sections (GumAddress invader_start, GumAddress invader_end, void * info)
 {
-  FridaDyldUnwindSections * unwind_sections = info;
-  FridaDyldUnwindSections * cached;
+  SundayDyldUnwindSections * unwind_sections = info;
+  SundayDyldUnwindSections * cached;
 
-  cached = frida_get_cached_sections (invader_start, invader_end);
+  cached = sunday_get_cached_sections (invader_start, invader_end);
   if (cached == NULL)
     return;
 
-  memcpy (unwind_sections, cached, sizeof (FridaDyldUnwindSections));
+  memcpy (unwind_sections, cached, sizeof (SundayDyldUnwindSections));
 }
 
 void
-_frida_unwind_sitter_hook_libunwind (void)
+_sunday_unwind_sitter_hook_libunwind (void)
 {
 #if GLIB_SIZEOF_VOID_P == 8
   gpointer * set_info_slot;
@@ -102,41 +102,41 @@ _frida_unwind_sitter_hook_libunwind (void)
   if (state != NULL)
     return;
 
-  state = g_slice_new0 (FridaUnwindHookState);
+  state = g_slice_new0 (SundayUnwindHookState);
   if (state == NULL)
     return;
 
-  state->vtable = frida_find_vtable ();
+  state->vtable = sunday_find_vtable ();
   if (state->vtable == NULL)
     goto unsupported_version;
 
-  if (!frida_compute_vtable_shift (state->vtable, &state->shift))
+  if (!sunday_compute_vtable_shift (state->vtable, &state->shift))
     goto unsupported_version;
 
-  set_info_slot = (gpointer *) (GUM_ADDRESS (state->vtable) + FRIDA_UNWIND_CURSOR_VTABLE_OFFSET_SET_INFO + state->shift);
-  get_reg_impl = *(gpointer *) (GUM_ADDRESS (state->vtable) + FRIDA_UNWIND_CURSOR_VTABLE_OFFSET_GET_REG + state->shift);
+  set_info_slot = (gpointer *) (GUM_ADDRESS (state->vtable) + SUNDAY_UNWIND_CURSOR_VTABLE_OFFSET_SET_INFO + state->shift);
+  get_reg_impl = *(gpointer *) (GUM_ADDRESS (state->vtable) + SUNDAY_UNWIND_CURSOR_VTABLE_OFFSET_GET_REG + state->shift);
 
   state->set_info_slot = set_info_slot;
   state->set_info_original = *set_info_slot;
-  state->set_info = FRIDA_RESIGN_PTR (state->set_info_original);
-  state->get_reg = FRIDA_RESIGN_PTR (get_reg_impl);
+  state->set_info = SUNDAY_RESIGN_PTR (state->set_info_original);
+  state->get_reg = SUNDAY_RESIGN_PTR (get_reg_impl);
 
   state->interceptor = gum_interceptor_obtain ();
 
-  if (gum_interceptor_replace (state->interceptor, state->set_info_original, frida_unwind_cursor_set_info_replacement, NULL, NULL)
+  if (gum_interceptor_replace (state->interceptor, state->set_info_original, sunday_unwind_cursor_set_info_replacement, NULL, NULL)
       != GUM_REPLACE_OK)
     goto unsupported_version;
 
   return;
 
 unsupported_version:
-  g_slice_free (FridaUnwindHookState, state);
+  g_slice_free (SundayUnwindHookState, state);
   state = NULL;
 #endif
 }
 
 void
-_frida_unwind_sitter_unhook_libunwind (void)
+_sunday_unwind_sitter_unhook_libunwind (void)
 {
   if (state == NULL)
     return;
@@ -145,46 +145,46 @@ _frida_unwind_sitter_unhook_libunwind (void)
 
   g_object_unref (state->interceptor);
 
-  g_slice_free (FridaUnwindHookState, state);
+  g_slice_free (SundayUnwindHookState, state);
   state = NULL;
 }
 
-static FridaDyldUnwindSections *
-frida_get_cached_sections (GumAddress range_start, GumAddress range_end)
+static SundayDyldUnwindSections *
+sunday_get_cached_sections (GumAddress range_start, GumAddress range_end)
 {
   static GOnce get_sections_once = G_ONCE_INIT;
-  FridaCreateArgs args;
+  SundayCreateArgs args;
 
   args.range_start = range_start;
   args.range_end = range_end;
 
-  g_once (&get_sections_once, (GThreadFunc) frida_create_cached_sections, &args);
+  g_once (&get_sections_once, (GThreadFunc) sunday_create_cached_sections, &args);
 
-  return (FridaDyldUnwindSections *) get_sections_once.retval;
+  return (SundayDyldUnwindSections *) get_sections_once.retval;
 }
 
-static FridaDyldUnwindSections *
-frida_create_cached_sections (FridaCreateArgs * args)
+static SundayDyldUnwindSections *
+sunday_create_cached_sections (SundayCreateArgs * args)
 {
-  FridaDyldUnwindSections * cached_sections;
+  SundayDyldUnwindSections * cached_sections;
   gsize page_size;
   gpointer header;
   GumPageProtection prot;
   GumDarwinModule * module;
-  FridaFillInfoContext ctx;
+  SundayFillInfoContext ctx;
 
   page_size = gum_query_page_size ();
   header = GSIZE_TO_POINTER (args->range_start);
 
   while ((gum_memory_query_protection (header, &prot) && (prot & GUM_PAGE_READ) == 0) ||
-      (*(guint32 *) header != FRIDA_MH_MAGIC_64 && header + 4 <= GSIZE_TO_POINTER (args->range_end)))
+      (*(guint32 *) header != SUNDAY_MH_MAGIC_64 && header + 4 <= GSIZE_TO_POINTER (args->range_end)))
   {
     header += page_size;
   }
-  if (*(guint32 *) header != FRIDA_MH_MAGIC_64)
+  if (*(guint32 *) header != SUNDAY_MH_MAGIC_64)
     return NULL;
 
-  cached_sections = g_slice_new0 (FridaDyldUnwindSections);
+  cached_sections = g_slice_new0 (SundayDyldUnwindSections);
   cached_sections->mh = header;
 
   module = gum_darwin_module_new_from_memory ("Frida", mach_task_self (), GPOINTER_TO_SIZE (header), GUM_DARWIN_MODULE_FLAGS_NONE, NULL);
@@ -193,7 +193,7 @@ frida_create_cached_sections (FridaCreateArgs * args)
 
   ctx.info = cached_sections;
   ctx.missing_info = 2;
-  gum_darwin_module_enumerate_sections (module, (GumFoundDarwinSectionFunc) frida_fill_info, &ctx);
+  gum_darwin_module_enumerate_sections (module, (GumFoundDarwinSectionFunc) sunday_fill_info, &ctx);
 
   g_object_unref (module);
 
@@ -201,7 +201,7 @@ frida_create_cached_sections (FridaCreateArgs * args)
 }
 
 static gboolean
-frida_fill_info (const GumDarwinSectionDetails * details, FridaFillInfoContext * ctx)
+sunday_fill_info (const GumDarwinSectionDetails * details, SundayFillInfoContext * ctx)
 {
   if (strcmp ("__TEXT", details->segment_name) != 0)
     return TRUE;
@@ -223,7 +223,7 @@ frida_fill_info (const GumDarwinSectionDetails * details, FridaFillInfoContext *
 }
 
 static void
-frida_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
+sunday_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
 {
   gboolean missing_info;
   GumAddress fp, stored_pc;
@@ -238,23 +238,23 @@ frida_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
   state->set_info (self, is_return_address);
 
 #ifdef HAVE_ARM64
-  fp = GUM_ADDRESS (state->get_reg (self, FRIDA_UNWAARCH64_X29));
+  fp = GUM_ADDRESS (state->get_reg (self, SUNDAY_UNWAARCH64_X29));
 #else
-  fp = GUM_ADDRESS (state->get_reg (self, FRIDA_UNWX86_64_RBP));
+  fp = GUM_ADDRESS (state->get_reg (self, SUNDAY_UNWX86_64_RBP));
 #endif
   if (fp == 0 || fp == -1)
     return;
 
-  missing_info = *((guint8 *) self + FRIDA_UNWIND_CURSOR_unwindInfoMissing);
+  missing_info = *((guint8 *) self + SUNDAY_UNWIND_CURSOR_unwindInfoMissing);
 
   stored_pc_slot = GSIZE_TO_POINTER (fp + GLIB_SIZEOF_VOID_P);
   stored_pc = GUM_ADDRESS (*stored_pc_slot);
 #if __has_feature (ptrauth_calls)
   stored_pc = gum_strip_code_address (stored_pc);
 #elif defined (HAVE_ARM64)
-  was_signed = (stored_pc & ~FRIDA_STRIP_MASK) != 0ULL;
+  was_signed = (stored_pc & ~SUNDAY_STRIP_MASK) != 0ULL;
   if (was_signed)
-    stored_pc &= FRIDA_STRIP_MASK;
+    stored_pc &= SUNDAY_STRIP_MASK;
 #endif
 
   if (!missing_info)
@@ -266,7 +266,7 @@ frida_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
     {
 #if __has_feature (ptrauth_calls)
       *stored_pc_slot = ptrauth_sign_unauthenticated (
-          ptrauth_strip (GSIZE_TO_POINTER (translated), ptrauth_key_asia), ptrauth_key_asib, FRIDA_FP_TO_SP (fp));
+          ptrauth_strip (GSIZE_TO_POINTER (translated), ptrauth_key_asia), ptrauth_key_asib, SUNDAY_FP_TO_SP (fp));
 #elif defined (HAVE_ARM64)
       if (was_signed)
       {
@@ -278,8 +278,8 @@ frida_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
             ".byte 0x5f, 0x21, 0x03, 0xd5\n\t" /* pacib1716 */
             "mov %0, x17\n\t"
             : "=r" (resigned)
-            : "r" (translated & FRIDA_STRIP_MASK),
-              "r" (FRIDA_FP_TO_SP (fp))
+            : "r" (translated & SUNDAY_STRIP_MASK),
+              "r" (SUNDAY_FP_TO_SP (fp))
             : "x16", "x17"
         );
 
@@ -297,7 +297,7 @@ frida_unwind_cursor_set_info_replacement (gpointer self, gint is_return_address)
 }
 
 static gpointer
-frida_find_vtable (void)
+sunday_find_vtable (void)
 {
   GumAddress result = 0;
   GumModule * libunwind;
@@ -310,7 +310,7 @@ frida_find_vtable (void)
   size_t size;
   const size_t max_size = 2048;
 
-  libunwind = gum_process_find_module_by_name (FRIDA_LIBUNWIND_PATH);
+  libunwind = gum_process_find_module_by_name (SUNDAY_LIBUNWIND_PATH);
   if (libunwind == NULL)
     goto beach;
 
@@ -345,7 +345,7 @@ frida_find_vtable (void)
     GumMemoryRange bss_range;
 
     bss_range.base_address = 0;
-    gum_module_enumerate_sections (libunwind, (GumFoundSectionFunc) frida_find_bss_range, &bss_range);
+    gum_module_enumerate_sections (libunwind, (GumFoundSectionFunc) sunday_find_bss_range, &bss_range);
 
     while (cs_disasm_iter (capstone, &code, &size, &address, insn))
     {
@@ -418,7 +418,7 @@ beach:
 #ifdef HAVE_ARM64
 
 static gboolean
-frida_find_bss_range (const GumSectionDetails * details, GumMemoryRange * range)
+sunday_find_bss_range (const GumSectionDetails * details, GumMemoryRange * range)
 {
   if (strcmp (details->name, "__bss") == 0)
   {
@@ -431,7 +431,7 @@ frida_find_bss_range (const GumSectionDetails * details, GumMemoryRange * range)
 }
 
 static gboolean
-frida_compute_vtable_shift (gpointer vtable, gssize * shift)
+sunday_compute_vtable_shift (gpointer vtable, gssize * shift)
 {
   gboolean result = FALSE;
   G_GNUC_UNUSED cs_err err;
@@ -469,7 +469,7 @@ frida_compute_vtable_shift (gpointer vtable, gssize * shift)
 #else
 
 static gboolean
-frida_compute_vtable_shift (gpointer vtable, gssize * shift)
+sunday_compute_vtable_shift (gpointer vtable, gssize * shift)
 {
   GumAddress cursor = GPOINTER_TO_SIZE (vtable);
   GumAddress error = cursor + 16 * GLIB_SIZEOF_VOID_P;
@@ -479,8 +479,8 @@ frida_compute_vtable_shift (gpointer vtable, gssize * shift)
   if (cursor == error)
     return FALSE;
 
-  if (frida_is_empty_function (GUM_ADDRESS (*(gpointer *) GSIZE_TO_POINTER (cursor))) &&
-      frida_is_empty_function (GUM_ADDRESS (*(gpointer *) GSIZE_TO_POINTER (cursor + GLIB_SIZEOF_VOID_P))))
+  if (sunday_is_empty_function (GUM_ADDRESS (*(gpointer *) GSIZE_TO_POINTER (cursor))) &&
+      sunday_is_empty_function (GUM_ADDRESS (*(gpointer *) GSIZE_TO_POINTER (cursor + GLIB_SIZEOF_VOID_P))))
   {
     *shift = cursor - GPOINTER_TO_SIZE (vtable);
   }
@@ -493,7 +493,7 @@ frida_compute_vtable_shift (gpointer vtable, gssize * shift)
 }
 
 static gboolean
-frida_is_empty_function (GumAddress address)
+sunday_is_empty_function (GumAddress address)
 {
   gboolean matches = FALSE;
   GumMemoryRange range;
@@ -510,7 +510,7 @@ frida_is_empty_function (GumAddress address)
    */
   pattern = gum_match_pattern_new_from_string ("55 48 89 e5 5d c3");
 
-  gum_memory_scan (&range, pattern, (GumMemoryScanMatchFunc) frida_has_first_match, &matches);
+  gum_memory_scan (&range, pattern, (GumMemoryScanMatchFunc) sunday_has_first_match, &matches);
 
   gum_match_pattern_unref (pattern);
 
@@ -518,7 +518,7 @@ frida_is_empty_function (GumAddress address)
 }
 
 static gboolean
-frida_has_first_match (GumAddress address, gsize size, gboolean * matches)
+sunday_has_first_match (GumAddress address, gsize size, gboolean * matches)
 {
   *matches = TRUE;
   return FALSE;

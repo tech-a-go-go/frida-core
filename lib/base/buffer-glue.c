@@ -1,7 +1,7 @@
 #include "frida-base.h"
 
 GBytes *
-frida_make_bytes_with_owner (GType t_type,
+sunday_make_bytes_with_owner (GType t_type,
                              GBoxedCopyFunc t_dup_func,
                              GDestroyNotify t_destroy_func,
                              void * data,

@@ -1,10 +1,10 @@
-#ifndef __FRIDA_POLICYD_H__
-#define __FRIDA_POLICYD_H__
+#ifndef __SUNDAY_POLICYD_H__
+#define __SUNDAY_POLICYD_H__
 
 #include "policyd-client.h"
 
-#define FRIDA_POLICYD_SERVICE_NAME "re.frida.policyd"
+#define SUNDAY_POLICYD_SERVICE_NAME "re.sunday.policyd"
 
-int frida_policyd_main (void);
+int sunday_policyd_main (void);
 
 #endif

@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class SocketHostSessionBackend : Object, HostSessionBackend {
 		private SocketHostSessionProvider provider;
 
@@ -38,7 +38,7 @@ namespace Frida {
 		private Cancellable io_cancellable = new Cancellable ();
 
 		construct {
-			_icon = make_provider_icon (Frida.Data.Icons.get_socket_png_blob ().data);
+			_icon = make_provider_icon (Sunday.Data.Icons.get_socket_png_blob ().data);
 		}
 
 		public async void close (Cancellable? cancellable) throws IOError {

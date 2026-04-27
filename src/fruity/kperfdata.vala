@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	public delegate void KperfdataRecordVisitor (KdBuf rec) throws Error;
 
 	public sealed class KperfdataStreamParser : Object {
@@ -37,8 +37,8 @@ namespace Frida.Fruity {
 		}
 
 		private void parse_bytes (Bytes bytes, KperfdataRecordVisitor visitor) throws Error {
-			var buf = new Frida.Buffer (bytes, LITTLE_ENDIAN);
-			var r = new Frida.BufferReader (buf);
+			var buf = new Sunday.Buffer (bytes, LITTLE_ENDIAN);
+			var r = new Sunday.BufferReader (buf);
 
 			while (true) {
 				if (!have_header) {

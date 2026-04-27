@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class HostSessionService : Object {
 		private Gee.ArrayList<HostSessionBackend> backends = new Gee.ArrayList<HostSessionBackend> ();
 
@@ -322,7 +322,7 @@ namespace Frida {
 		}
 
 		protected virtual Variant? load_icon () {
-			return make_provider_icon (Frida.Data.Icons.get_local_png_blob ().data);
+			return make_provider_icon (Sunday.Data.Icons.get_local_png_blob ().data);
 		}
 
 		public async void close (Cancellable? cancellable) throws IOError {

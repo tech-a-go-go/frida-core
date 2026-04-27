@@ -1,2 +1,2 @@
 EXPORTS
-	frida_gadget_wait_for_permission_to_resume
+	sunday_gadget_wait_for_permission_to_resume

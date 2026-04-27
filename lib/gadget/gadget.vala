@@ -1,4 +1,4 @@
-namespace Frida.Gadget {
+namespace Sunday.Gadget {
 	private sealed class Config : Object, Json.Serializable {
 		public Object interaction {
 			get;
@@ -569,7 +569,7 @@ namespace Frida.Gadget {
 	}
 
 	private async void perform_start (Gee.Promise<int>? request) {
-		worker_ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+		worker_ignore_scope = new ThreadIgnoreScope (SUNDAY_THREAD);
 
 		try {
 			yield controller.start ();
@@ -869,8 +869,8 @@ namespace Frida.Gadget {
 			var client = new PortalClient (this, parse_cluster_address (address), address, options.certificate, options.token,
 				options.acl, compute_app_info ());
 			client.eternalized.connect (on_eternalized);
-			client.resume.connect (Frida.Gadget.resume);
-			client.kill.connect (Frida.Gadget.kill);
+			client.resume.connect (Sunday.Gadget.resume);
+			client.kill.connect (Sunday.Gadget.kill);
 			yield client.start (cancellable);
 
 			var id = PortalMembershipId (next_portal_membership_id++);
@@ -942,7 +942,7 @@ namespace Frida.Gadget {
 		protected override async void on_start () throws Error, IOError {
 			yield script.start ();
 
-			Frida.Gadget.resume ();
+			Sunday.Gadget.resume ();
 		}
 
 		protected override async void on_terminate (TerminationReason reason) {
@@ -1011,7 +1011,7 @@ namespace Frida.Gadget {
 
 			yield scan ();
 
-			Frida.Gadget.resume ();
+			Sunday.Gadget.resume ();
 		}
 
 		protected override async void on_terminate (TerminationReason reason) {
@@ -1712,19 +1712,19 @@ namespace Frida.Gadget {
 			construct {
 				try {
 					HostSession host_session = this;
-					registrations.add (connection.register_object (Frida.ObjectPath.HOST_SESSION, host_session));
+					registrations.add (connection.register_object (Sunday.ObjectPath.HOST_SESSION, host_session));
 
 					GadgetSession gadget_session = this;
-					registrations.add (connection.register_object (Frida.ObjectPath.GADGET_SESSION, gadget_session));
+					registrations.add (connection.register_object (Sunday.ObjectPath.GADGET_SESSION, gadget_session));
 
 					AuthenticationService null_auth = new NullAuthenticationService ();
-					registrations.add (connection.register_object (Frida.ObjectPath.AUTHENTICATION_SERVICE, null_auth));
+					registrations.add (connection.register_object (Sunday.ObjectPath.AUTHENTICATION_SERVICE, null_auth));
 				} catch (IOError e) {
 					assert_not_reached ();
 				}
 
 				uint pid = get_process_id ();
-				string identifier = "re.frida.Gadget";
+				string identifier = "re.sunday.Gadget";
 				string name = "Gadget";
 				var no_parameters = make_parameters_dict ();
 				this_app = HostApplicationInfo (identifier, name, pid, no_parameters);
@@ -1838,13 +1838,13 @@ namespace Frida.Gadget {
 			public async void resume (uint pid, Cancellable? cancellable) throws Error, IOError {
 				validate_pid (pid);
 
-				Frida.Gadget.resume ();
+				Sunday.Gadget.resume ();
 			}
 
 			public async void kill (uint pid, Cancellable? cancellable) throws Error, IOError {
 				validate_pid (pid);
 
-				Frida.Gadget.kill ();
+				Sunday.Gadget.kill ();
 			}
 
 			public async AgentSessionId attach (uint pid, HashTable<string, Variant> options,
@@ -1852,7 +1852,7 @@ namespace Frida.Gadget {
 				validate_pid (pid);
 
 				if (resume_on_attach)
-					Frida.Gadget.resume ();
+					Sunday.Gadget.resume ();
 
 				return yield parent.attach (options, this, cancellable);
 			}
@@ -1919,7 +1919,7 @@ namespace Frida.Gadget {
 					id: id,
 					persist_timeout: persist_timeout,
 					message_sink: sink,
-					frida_context: MainContext.ref_thread_default (),
+					sunday_context: MainContext.ref_thread_default (),
 					dbus_context: dbus_context
 				);
 			}
@@ -1971,8 +1971,8 @@ namespace Frida.Gadget {
 		construct {
 			client = new PortalClient (this, connectable, host, certificate, token, acl, compute_app_info ());
 			client.eternalized.connect (on_eternalized);
-			client.resume.connect (Frida.Gadget.resume);
-			client.kill.connect (Frida.Gadget.kill);
+			client.resume.connect (Sunday.Gadget.resume);
+			client.kill.connect (Sunday.Gadget.kill);
 		}
 
 		protected override HostApplicationInfo compute_app_info () {

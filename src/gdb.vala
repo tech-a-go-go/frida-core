@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaGDB", gir_version = "1.0")]
-namespace Frida.GDB {
+[CCode (gir_namespace = "SundayGDB", gir_version = "1.0")]
+namespace Sunday.GDB {
 	public class Client : Object, AsyncInitable {
 		public signal void closed ();
 		public signal void console_output (Bytes bytes);

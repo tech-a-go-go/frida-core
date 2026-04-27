@@ -1,4 +1,4 @@
-public sealed class Frida.SyscallTracer : Object {
+public sealed class Sunday.SyscallTracer : Object {
 	public signal void events_available ();
 
 	public State state {
@@ -48,7 +48,7 @@ public sealed class Frida.SyscallTracer : Object {
 	public void start () throws Error {
 		assert (state == STOPPED);
 
-		var obj = BpfObject.open ("syscall-tracer.elf", Frida.Data.HelperBackend.get_syscall_tracer_elf_blob ().data);
+		var obj = BpfObject.open ("syscall-tracer.elf", Sunday.Data.HelperBackend.get_syscall_tracer_elf_blob ().data);
 
 		target_tgids = obj.maps.get_by_name ("target_tgids");
 		target_uids = obj.maps.get_by_name ("target_uids");

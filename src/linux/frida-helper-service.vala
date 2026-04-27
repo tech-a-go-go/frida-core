@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public int main (string[] args) {
 		Posix.setsid ();
 
@@ -93,7 +93,7 @@ namespace Frida {
 				connection.on_closed.connect (on_connection_closed);
 
 				LinuxRemoteHelper helper = this;
-				helper_registration_id = connection.register_object (Frida.ObjectPath.HELPER, helper);
+				helper_registration_id = connection.register_object (Sunday.ObjectPath.HELPER, helper);
 
 				connection.start_message_processing ();
 			} catch (GLib.Error e) {

@@ -1,4 +1,4 @@
-namespace Frida.CompilerTest {
+namespace Sunday.CompilerTest {
 	public static void add_tests () {
 		GLib.Test.add_func ("/Compiler/Performance/build-simple-agent", () => {
 			var h = new Harness ((h) => Performance.build_simple_agent.begin (h as Harness));
@@ -51,7 +51,7 @@ export function log(...items: any[]) {
 					print ("Built in %u ms\n", elapsed_msec);
 				}
 
-				unowned string? test_log_path = Environment.get_variable ("FRIDA_TEST_LOG");
+				unowned string? test_log_path = Environment.get_variable ("SUNDAY_TEST_LOG");
 				if (test_log_path != null) {
 					var test_log = FileStream.open (test_log_path, "w");
 					assert (test_log != null);
@@ -121,7 +121,7 @@ export function log(...items: any[]) {
 				if (GLib.Test.verbose ())
 					print ("Watch built first bundle in %u ms\n", elapsed_msec);
 
-				unowned string? test_log_path = Environment.get_variable ("FRIDA_TEST_LOG");
+				unowned string? test_log_path = Environment.get_variable ("SUNDAY_TEST_LOG");
 				if (test_log_path != null) {
 					var test_log = FileStream.open (test_log_path, "w");
 					assert (test_log != null);
@@ -159,10 +159,10 @@ export function log(...items: any[]) {
 			if (GLib.Test.slow ())
 				return false;
 
-			if (Frida.Test.os () == Frida.Test.OS.IOS)
+			if (Sunday.Test.os () == Sunday.Test.OS.IOS)
 				return true;
 
-			switch (Frida.Test.cpu ()) {
+			switch (Sunday.Test.cpu ()) {
 				case ARM_32:
 				case ARM_64: {
 					bool likely_running_in_an_emulator = ByteOrder.HOST == ByteOrder.BIG_ENDIAN;
@@ -178,8 +178,8 @@ export function log(...items: any[]) {
 		}
 	}
 
-	private sealed class Harness : Frida.Test.AsyncHarness {
-		public Harness (owned Frida.Test.AsyncHarness.TestSequenceFunc func) {
+	private sealed class Harness : Sunday.Test.AsyncHarness {
+		public Harness (owned Sunday.Test.AsyncHarness.TestSequenceFunc func) {
 			base ((owned) func);
 		}
 	}

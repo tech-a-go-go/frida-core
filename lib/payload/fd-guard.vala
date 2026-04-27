@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 #if WINDOWS
 	public sealed class FileDescriptorGuard : Object {
 		public Gum.MemoryRange agent_range {

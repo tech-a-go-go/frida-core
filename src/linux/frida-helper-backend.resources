@@ -1,2 +1,2 @@
 [resource-compiler]
-namespace = Frida.Data.HelperBackend
+namespace = Sunday.Data.HelperBackend

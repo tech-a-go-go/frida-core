@@ -1,5 +1,5 @@
-#ifndef __FRIDA_JNI_H__
-#define __FRIDA_JNI_H__
+#ifndef __SUNDAY_JNI_H__
+#define __SUNDAY_JNI_H__
 
 #include <jni.h>
 

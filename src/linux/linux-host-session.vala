@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class LinuxHostSessionBackend : LocalHostSessionBackend {
 		protected override LocalHostSessionProvider make_provider () {
 			return new LinuxHostSessionProvider ();
@@ -60,10 +60,10 @@ namespace Frida {
 			injector.uninjected.connect (on_uninjected);
 
 #if HAVE_EMBEDDED_ASSETS
-			var blob32 = Frida.Data.Agent.get_frida_agent_32_so_blob ();
-			var blob64 = Frida.Data.Agent.get_frida_agent_64_so_blob ();
-			var emulated_arm = Frida.Data.Agent.get_frida_agent_arm_so_blob ();
-			var emulated_arm64 = Frida.Data.Agent.get_frida_agent_arm64_so_blob ();
+			var blob32 = Sunday.Data.Agent.get_sunday_agent_32_so_blob ();
+			var blob64 = Sunday.Data.Agent.get_sunday_agent_64_so_blob ();
+			var emulated_arm = Sunday.Data.Agent.get_sunday_agent_arm_so_blob ();
+			var emulated_arm64 = Sunday.Data.Agent.get_sunday_agent_arm64_so_blob ();
 			agent = new AgentDescriptor (PathTemplate ("frida-agent-<arch>.so"),
 				new Bytes.static (blob32.data),
 				new Bytes.static (blob64.data),
@@ -162,7 +162,7 @@ namespace Frida {
 				tpl = agent.get_path_template ();
 			}
 #else
-			tpl = PathTemplate (Frida.agent_path);
+			tpl = PathTemplate (Sunday.agent_path);
 #endif
 			if (path == null)
 				path = tpl.expand (arch_name);
@@ -387,14 +387,14 @@ namespace Frida {
 		protected override async Future<IOStream> perform_attach_to (uint pid, HashTable<string, Variant> options,
 				Cancellable? cancellable, out Object? transport) throws Error, IOError {
 			uint id;
-			string entrypoint = "frida_agent_main";
+			string entrypoint = "sunday_agent_main";
 			string parameters = make_agent_parameters (pid, "", options);
 			AgentFeatures features = CONTROL_CHANNEL;
 			var linjector = (Linjector) injector;
 #if HAVE_EMBEDDED_ASSETS
 			id = yield linjector.inject_library_resource (pid, agent, entrypoint, parameters, features, cancellable);
 #else
-			id = yield linjector.inject_library_file_with_template (pid, PathTemplate (Frida.agent_path), entrypoint,
+			id = yield linjector.inject_library_file_with_template (pid, PathTemplate (Sunday.agent_path), entrypoint,
 				parameters, features, cancellable);
 #endif
 			injectee_by_pid[pid] = id;
@@ -463,7 +463,7 @@ namespace Frida {
 			try {
 				string instance_id = Uuid.string_random ().replace ("-", "");
 				string helper_path = "/data/local/tmp/frida-helper-" + instance_id + ".dex";
-				FileUtils.set_data (helper_path, Frida.Data.Android.get_helper_dex_blob ().data);
+				FileUtils.set_data (helper_path, Sunday.Data.Android.get_helper_dex_blob ().data);
 				Posix.chmod (helper_path, 0644);
 
 				try {
@@ -1915,11 +1915,11 @@ namespace Frida {
 
 			var blob = (pointer_size == 8)
 #if ARM || ARM64
-				? Frida.Data.Android.get_zymbiote_arm64_elf_blob ()
-				: Frida.Data.Android.get_zymbiote_arm_elf_blob ();
+				? Sunday.Data.Android.get_zymbiote_arm64_elf_blob ()
+				: Sunday.Data.Android.get_zymbiote_arm_elf_blob ();
 #else
-				? Frida.Data.Android.get_zymbiote_x86_64_elf_blob ()
-				: Frida.Data.Android.get_zymbiote_x86_elf_blob ();
+				? Sunday.Data.Android.get_zymbiote_x86_64_elf_blob ()
+				: Sunday.Data.Android.get_zymbiote_x86_elf_blob ();
 #endif
 
 			Gum.ElfModule zymbiote;
@@ -1942,9 +1942,9 @@ namespace Frida {
 			uint64 setargv0 = 0;
 			uint64 setcontext = 0;
 			zymbiote.enumerate_exports (e => {
-				if (e.name == "frida_zymbiote_replacement_setargv0")
+				if (e.name == "sunday_zymbiote_replacement_setargv0")
 					setargv0 = payload_base + (e.address - text.vm_address);
-				else if (e.name == "frida_zymbiote_replacement_setcontext")
+				else if (e.name == "sunday_zymbiote_replacement_setcontext")
 					setcontext = payload_base + (e.address - text.vm_address);
 				return true;
 			});

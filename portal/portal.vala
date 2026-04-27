@@ -1,4 +1,4 @@
-namespace Frida.Portal {
+namespace Sunday.Portal {
 	private static Application application;
 
 	private static bool output_version = false;

@@ -1,14 +1,14 @@
 #include "frida-darwin.h"
 
 gpointer
-_frida_dispatch_retain (gpointer object)
+_sunday_dispatch_retain (gpointer object)
 {
   dispatch_retain (object);
   return object;
 }
 
 void
-_frida_xpc_connection_set_event_handler (xpc_connection_t connection, FridaXpcHandler handler, gpointer user_data)
+_sunday_xpc_connection_set_event_handler (xpc_connection_t connection, SundayXpcHandler handler, gpointer user_data)
 {
   xpc_connection_set_event_handler (connection, ^(xpc_object_t object)
       {
@@ -17,8 +17,8 @@ _frida_xpc_connection_set_event_handler (xpc_connection_t connection, FridaXpcHa
 }
 
 void
-_frida_xpc_connection_send_message_with_reply (xpc_connection_t connection, xpc_object_t message, dispatch_queue_t replyq,
-    FridaXpcHandler handler, gpointer user_data, GDestroyNotify notify)
+_sunday_xpc_connection_send_message_with_reply (xpc_connection_t connection, xpc_object_t message, dispatch_queue_t replyq,
+    SundayXpcHandler handler, gpointer user_data, GDestroyNotify notify)
 {
   xpc_connection_send_message_with_reply (connection, message, replyq, ^(xpc_object_t object)
       {
@@ -29,7 +29,7 @@ _frida_xpc_connection_send_message_with_reply (xpc_connection_t connection, xpc_
 }
 
 gchar *
-_frida_xpc_object_to_string (xpc_object_t object)
+_sunday_xpc_object_to_string (xpc_object_t object)
 {
   gchar * result;
   char * str;
@@ -42,7 +42,7 @@ _frida_xpc_object_to_string (xpc_object_t object)
 }
 
 gboolean
-_frida_xpc_dictionary_apply (xpc_object_t dict, FridaXpcDictionaryApplier applier, gpointer user_data)
+_sunday_xpc_dictionary_apply (xpc_object_t dict, SundayXpcDictionaryApplier applier, gpointer user_data)
 {
   return xpc_dictionary_apply (dict, ^bool (const char * key, xpc_object_t val)
       {

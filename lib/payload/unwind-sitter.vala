@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 #if DARWIN
 	public sealed class UnwindSitter : Object {
 		public weak ProcessInvader invader {

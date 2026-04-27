@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity.Kcdata {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity.Kcdata {
 	public struct ItemHeader {
 		public ItemType type;
 		public uint32 size;

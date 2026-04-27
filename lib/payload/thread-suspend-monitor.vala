@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 #if DARWIN
 	public sealed class ThreadSuspendMonitor : Object {
 		public weak ProcessInvader invader {

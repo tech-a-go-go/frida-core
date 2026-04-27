@@ -3,7 +3,7 @@
 #ifdef HAVE_WINDOWS
 # include <windows.h>
 # include <psapi.h>
-typedef HANDLE FridaProcessHandle;
+typedef HANDLE SundayProcessHandle;
 #elif defined (HAVE_DARWIN)
 # if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
 #  define PROC_PIDLISTFDS 1
@@ -19,24 +19,24 @@ int proc_pid_rusage (int pid, int flavor, rusage_info_t * buffer);
 #  include <libproc.h>
 # endif
 # include <mach/mach.h>
-typedef mach_port_t FridaProcessHandle;
+typedef mach_port_t SundayProcessHandle;
 #else
-typedef gpointer FridaProcessHandle;
+typedef gpointer SundayProcessHandle;
 #endif
 
-typedef struct _FridaMetricCollectorEntry FridaMetricCollectorEntry;
-typedef guint (* FridaMetricCollector) (guint pid, FridaProcessHandle handle);
+typedef struct _SundayMetricCollectorEntry SundayMetricCollectorEntry;
+typedef guint (* SundayMetricCollector) (guint pid, SundayProcessHandle handle);
 
-struct _FridaMetricCollectorEntry
+struct _SundayMetricCollectorEntry
 {
   const gchar * name;
-  FridaMetricCollector collect;
+  SundayMetricCollector collect;
 };
 
 #ifdef HAVE_WINDOWS
 
-static FridaProcessHandle
-frida_open_process (guint pid, guint * real_pid)
+static SundayProcessHandle
+sunday_open_process (guint pid, guint * real_pid)
 {
   HANDLE process;
 
@@ -58,14 +58,14 @@ frida_open_process (guint pid, guint * real_pid)
 }
 
 static void
-frida_close_process (FridaProcessHandle process, guint pid)
+sunday_close_process (SundayProcessHandle process, guint pid)
 {
   if (pid != 0)
     CloseHandle (process);
 }
 
 static guint
-frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
+sunday_collect_memory_footprint (guint pid, SundayProcessHandle process)
 {
   PROCESS_MEMORY_COUNTERS_EX counters;
   BOOL success;
@@ -77,7 +77,7 @@ frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
 }
 
 static guint
-frida_collect_handles (guint pid, FridaProcessHandle process)
+sunday_collect_handles (guint pid, SundayProcessHandle process)
 {
   DWORD count;
   BOOL success;
@@ -92,8 +92,8 @@ frida_collect_handles (guint pid, FridaProcessHandle process)
 
 #ifdef HAVE_DARWIN
 
-static FridaProcessHandle
-frida_open_process (guint pid, guint * real_pid)
+static SundayProcessHandle
+sunday_open_process (guint pid, guint * real_pid)
 {
   mach_port_t task;
 
@@ -115,7 +115,7 @@ frida_open_process (guint pid, guint * real_pid)
 }
 
 static void
-frida_close_process (FridaProcessHandle process, guint pid)
+sunday_close_process (SundayProcessHandle process, guint pid)
 {
   if (pid != 0)
   {
@@ -125,7 +125,7 @@ frida_close_process (FridaProcessHandle process, guint pid)
 }
 
 static guint
-frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
+sunday_collect_memory_footprint (guint pid, SundayProcessHandle process)
 {
   struct rusage_info_v2 info;
   int res;
@@ -137,7 +137,7 @@ frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
 }
 
 static guint
-frida_collect_mach_ports (guint pid, FridaProcessHandle process)
+sunday_collect_mach_ports (guint pid, SundayProcessHandle process)
 {
   kern_return_t kr;
   ipc_info_space_basic_t info;
@@ -149,7 +149,7 @@ frida_collect_mach_ports (guint pid, FridaProcessHandle process)
 }
 
 static guint
-frida_collect_file_descriptors (guint pid, FridaProcessHandle process)
+sunday_collect_file_descriptors (guint pid, SundayProcessHandle process)
 {
   return proc_pidinfo (pid, PROC_PIDLISTFDS, 0, NULL, 0) / PROC_PIDLISTFD_SIZE;
 }
@@ -158,8 +158,8 @@ frida_collect_file_descriptors (guint pid, FridaProcessHandle process)
 
 #ifdef HAVE_LINUX
 
-static FridaProcessHandle
-frida_open_process (guint pid, guint * real_pid)
+static SundayProcessHandle
+sunday_open_process (guint pid, guint * real_pid)
 {
   *real_pid = (pid != 0) ? pid : getpid ();
 
@@ -167,12 +167,12 @@ frida_open_process (guint pid, guint * real_pid)
 }
 
 static void
-frida_close_process (FridaProcessHandle process, guint pid)
+sunday_close_process (SundayProcessHandle process, guint pid)
 {
 }
 
 static guint
-frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
+sunday_collect_memory_footprint (guint pid, SundayProcessHandle process)
 {
   gchar * path, * stats;
   gboolean success;
@@ -192,7 +192,7 @@ frida_collect_memory_footprint (guint pid, FridaProcessHandle process)
 }
 
 static guint
-frida_collect_file_descriptors (guint pid, FridaProcessHandle process)
+sunday_collect_file_descriptors (guint pid, SundayProcessHandle process)
 {
   gchar * path;
   GDir * dir;
@@ -218,8 +218,8 @@ frida_collect_file_descriptors (guint pid, FridaProcessHandle process)
 
 #if defined (HAVE_QNX) || defined (HAVE_FREEBSD)
 
-static FridaProcessHandle
-frida_open_process (guint pid, guint * real_pid)
+static SundayProcessHandle
+sunday_open_process (guint pid, guint * real_pid)
 {
   *real_pid = (pid != 0) ? pid : getpid ();
 
@@ -227,50 +227,50 @@ frida_open_process (guint pid, guint * real_pid)
 }
 
 static void
-frida_close_process (FridaProcessHandle process, guint pid)
+sunday_close_process (SundayProcessHandle process, guint pid)
 {
 }
 
 #endif
 
-static const FridaMetricCollectorEntry frida_metric_collectors[] =
+static const SundayMetricCollectorEntry sunday_metric_collectors[] =
 {
 #ifdef HAVE_WINDOWS
-  { "memory", frida_collect_memory_footprint },
-  { "handles", frida_collect_handles },
+  { "memory", sunday_collect_memory_footprint },
+  { "handles", sunday_collect_handles },
 #endif
 #ifdef HAVE_DARWIN
-  { "memory", frida_collect_memory_footprint },
-  { "ports", frida_collect_mach_ports },
-  { "files", frida_collect_file_descriptors },
+  { "memory", sunday_collect_memory_footprint },
+  { "ports", sunday_collect_mach_ports },
+  { "files", sunday_collect_file_descriptors },
 #endif
 #ifdef HAVE_LINUX
-  { "memory", frida_collect_memory_footprint },
-  { "files", frida_collect_file_descriptors },
+  { "memory", sunday_collect_memory_footprint },
+  { "files", sunday_collect_file_descriptors },
 #endif
   { NULL, NULL }
 };
 
-FridaTestResourceUsageSnapshot *
-frida_test_resource_usage_snapshot_create_for_pid (guint pid)
+SundayTestResourceUsageSnapshot *
+sunday_test_resource_usage_snapshot_create_for_pid (guint pid)
 {
-  FridaTestResourceUsageSnapshot * snapshot;
-  FridaProcessHandle process;
+  SundayTestResourceUsageSnapshot * snapshot;
+  SundayProcessHandle process;
   guint real_pid;
-  const FridaMetricCollectorEntry * entry;
+  const SundayMetricCollectorEntry * entry;
 
-  snapshot = frida_test_resource_usage_snapshot_new ();
+  snapshot = sunday_test_resource_usage_snapshot_new ();
 
-  process = frida_open_process (pid, &real_pid);
+  process = sunday_open_process (pid, &real_pid);
 
-  for (entry = frida_metric_collectors; entry->name != NULL; entry++)
+  for (entry = sunday_metric_collectors; entry->name != NULL; entry++)
   {
     guint value = entry->collect (real_pid, process);
 
-    _frida_test_resource_usage_snapshot_add (snapshot, entry->name, value);
+    _sunday_test_resource_usage_snapshot_add (snapshot, entry->name, value);
   }
 
-  frida_close_process (process, pid);
+  sunday_close_process (process, pid);
 
   return snapshot;
 }

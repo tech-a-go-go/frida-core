@@ -23,18 +23,18 @@
     goto nt_failure; \
   }
 
-typedef struct _FridaInjectInstance FridaInjectInstance;
-typedef struct _FridaInjectionDetails FridaInjectionDetails;
-typedef struct _FridaRemoteWorkerContext FridaRemoteWorkerContext;
+typedef struct _SundayInjectInstance SundayInjectInstance;
+typedef struct _SundayInjectionDetails SundayInjectionDetails;
+typedef struct _SundayRemoteWorkerContext SundayRemoteWorkerContext;
 
-struct _FridaInjectInstance
+struct _SundayInjectInstance
 {
   HANDLE process_handle;
   gpointer free_address;
   gpointer stay_resident_address;
 };
 
-struct _FridaInjectionDetails
+struct _SundayInjectionDetails
 {
   HANDLE process_handle;
   const WCHAR * dll_path;
@@ -42,7 +42,7 @@ struct _FridaInjectionDetails
   const gchar * entrypoint_data;
 };
 
-struct _FridaRemoteWorkerContext
+struct _SundayRemoteWorkerContext
 {
   gboolean stay_resident;
 
@@ -72,41 +72,41 @@ typedef NTSTATUS (WINAPI * RtlCreateUserThreadFunc) (HANDLE process, SECURITY_DE
     BOOLEAN create_suspended, ULONG stack_zero_bits, SIZE_T * stack_reserved, SIZE_T * stack_commit,
     LPTHREAD_START_ROUTINE start_address, LPVOID parameter, HANDLE * thread_handle, RtlClientId * result);
 
-static void frida_propagate_open_process_error (guint32 pid, DWORD os_error, GError ** error);
-static gboolean frida_enable_debug_privilege (void);
+static void sunday_propagate_open_process_error (guint32 pid, DWORD os_error, GError ** error);
+static gboolean sunday_enable_debug_privilege (void);
 
-static gboolean frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjectionDetails * details, GError ** error);
-static gsize frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpointer code);
-static void frida_remote_worker_context_destroy (FridaRemoteWorkerContext * rwc, FridaInjectionDetails * details);
+static gboolean sunday_remote_worker_context_init (SundayRemoteWorkerContext * rwc, SundayInjectionDetails * details, GError ** error);
+static gsize sunday_remote_worker_context_emit_payload (SundayRemoteWorkerContext * rwc, gpointer code);
+static void sunday_remote_worker_context_destroy (SundayRemoteWorkerContext * rwc, SundayInjectionDetails * details);
 
-static gboolean frida_remote_worker_context_has_resolved_all_kernel32_functions (const FridaRemoteWorkerContext * rwc);
-static gboolean frida_remote_worker_context_collect_kernel32_export (const GumExportDetails * details, gpointer user_data);
+static gboolean sunday_remote_worker_context_has_resolved_all_kernel32_functions (const SundayRemoteWorkerContext * rwc);
+static gboolean sunday_remote_worker_context_collect_kernel32_export (const GumExportDetails * details, gpointer user_data);
 
-static gboolean frida_file_exists_and_is_readable (const WCHAR * filename);
+static gboolean sunday_file_exists_and_is_readable (const WCHAR * filename);
 
 void
-_frida_windows_helper_backend_inject_library_file (guint32 pid, const gchar * path, const gchar * entrypoint, const gchar * data,
+_sunday_windows_helper_backend_inject_library_file (guint32 pid, const gchar * path, const gchar * entrypoint, const gchar * data,
     void ** inject_instance, void ** waitable_thread_handle, GError ** error)
 {
   gboolean success = FALSE;
   const gchar * failed_operation;
   NTSTATUS nt_status;
-  FridaInjectionDetails details;
+  SundayInjectionDetails details;
   DWORD desired_access;
   HANDLE thread_handle = NULL;
   gboolean rwc_initialized = FALSE;
-  FridaRemoteWorkerContext rwc;
-  FridaInjectInstance * instance;
+  SundayRemoteWorkerContext rwc;
+  SundayInjectInstance * instance;
 
   details.dll_path = (WCHAR *) g_utf8_to_utf16 (path, -1, NULL, NULL, NULL);
   details.entrypoint_name = entrypoint;
   details.entrypoint_data = data;
   details.process_handle = NULL;
 
-  if (!frida_file_exists_and_is_readable (details.dll_path))
+  if (!sunday_file_exists_and_is_readable (details.dll_path))
     goto invalid_path;
 
-  frida_enable_debug_privilege ();
+  sunday_enable_debug_privilege ();
 
   desired_access =
       PROCESS_DUP_HANDLE    | /* duplicatable handle                  */
@@ -118,7 +118,7 @@ _frida_windows_helper_backend_inject_library_file (guint32 pid, const gchar * pa
   details.process_handle = OpenProcess (desired_access, FALSE, pid);
   CHECK_OS_RESULT (details.process_handle, !=, NULL, "OpenProcess");
 
-  if (!frida_remote_worker_context_init (&rwc, &details, error))
+  if (!sunday_remote_worker_context_init (&rwc, &details, error))
     goto beach;
   rwc_initialized = TRUE;
 
@@ -135,11 +135,11 @@ _frida_windows_helper_backend_inject_library_file (guint32 pid, const gchar * pa
     CHECK_NT_RESULT (nt_status, == , 0, "RtlCreateUserThread");
   }
 
-  instance = g_slice_new (FridaInjectInstance);
+  instance = g_slice_new (SundayInjectInstance);
   instance->process_handle = details.process_handle;
   details.process_handle = NULL;
   instance->free_address = rwc.entrypoint;
-  instance->stay_resident_address = (guint8 *) rwc.argument + G_STRUCT_OFFSET (FridaRemoteWorkerContext, stay_resident);
+  instance->stay_resident_address = (guint8 *) rwc.argument + G_STRUCT_OFFSET (SundayRemoteWorkerContext, stay_resident);
   *inject_instance = instance;
 
   *waitable_thread_handle = thread_handle;
@@ -153,8 +153,8 @@ _frida_windows_helper_backend_inject_library_file (guint32 pid, const gchar * pa
 invalid_path:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_INVALID_ARGUMENT,
         "Unable to find DLL at '%s'",
         path);
     goto beach;
@@ -167,13 +167,13 @@ os_failure:
 
     if (details.process_handle == NULL)
     {
-      frida_propagate_open_process_error (pid, os_error, error);
+      sunday_propagate_open_process_error (pid, os_error, error);
     }
     else
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          (os_error == ERROR_ACCESS_DENIED) ? FRIDA_ERROR_PERMISSION_DENIED : FRIDA_ERROR_NOT_SUPPORTED,
+          SUNDAY_ERROR,
+          (os_error == ERROR_ACCESS_DENIED) ? SUNDAY_ERROR_PERMISSION_DENIED : SUNDAY_ERROR_NOT_SUPPORTED,
           "Unexpected error while attaching to process with pid %u (%s returned 0x%08lx)",
           pid, failed_operation, os_error);
     }
@@ -185,12 +185,12 @@ nt_failure:
     gint code;
 
     if (nt_status == 0xC0000022) /* STATUS_ACCESS_DENIED */
-      code = FRIDA_ERROR_PERMISSION_DENIED;
+      code = SUNDAY_ERROR_PERMISSION_DENIED;
     else
-      code = FRIDA_ERROR_NOT_SUPPORTED;
+      code = SUNDAY_ERROR_NOT_SUPPORTED;
 
     g_set_error (error,
-        FRIDA_ERROR,
+        SUNDAY_ERROR,
         code,
         "Unexpected error while attaching to process with pid %u (%s returned 0x%08lx)",
         pid, failed_operation, nt_status);
@@ -200,7 +200,7 @@ nt_failure:
 beach:
   {
     if (!success && rwc_initialized)
-      frida_remote_worker_context_destroy (&rwc, &details);
+      sunday_remote_worker_context_destroy (&rwc, &details);
 
     if (thread_handle != NULL)
       CloseHandle (thread_handle);
@@ -213,9 +213,9 @@ beach:
 }
 
 void
-_frida_windows_helper_backend_free_inject_instance (void * inject_instance, gboolean * is_resident)
+_sunday_windows_helper_backend_free_inject_instance (void * inject_instance, gboolean * is_resident)
 {
-  FridaInjectInstance * instance = inject_instance;
+  SundayInjectInstance * instance = inject_instance;
   gboolean stay_resident;
   SIZE_T n_bytes_read;
 
@@ -233,40 +233,40 @@ _frida_windows_helper_backend_free_inject_instance (void * inject_instance, gboo
 
   CloseHandle (instance->process_handle);
 
-  g_slice_free (FridaInjectInstance, instance);
+  g_slice_free (SundayInjectInstance, instance);
 }
 
 static void
-frida_propagate_open_process_error (guint32 pid, DWORD os_error, GError ** error)
+sunday_propagate_open_process_error (guint32 pid, DWORD os_error, GError ** error)
 {
   if (os_error == ERROR_INVALID_PARAMETER)
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PROCESS_NOT_FOUND,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PROCESS_NOT_FOUND,
         "Unable to find process with pid %u",
         pid);
   }
   else if (os_error == ERROR_ACCESS_DENIED)
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to access process with pid %u from the current user account",
         pid);
   }
   else
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unable to access process with pid %u due to an unexpected error (OpenProcess returned 0x%08lx)",
         pid, os_error);
   }
 }
 
 static gboolean
-frida_enable_debug_privilege (void)
+sunday_enable_debug_privilege (void)
 {
   static gboolean enabled = FALSE;
   gboolean success = FALSE;
@@ -302,7 +302,7 @@ beach:
 }
 
 static gboolean
-frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjectionDetails * details, GError ** error)
+sunday_remote_worker_context_init (SundayRemoteWorkerContext * rwc, SundayInjectionDetails * details, GError ** error)
 {
   gpointer code;
   guint code_size;
@@ -313,14 +313,14 @@ frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjection
   gum_init ();
 
   code = gum_alloc_n_pages (1, GUM_PAGE_RWX); /* Executable so debugger can be used to inspect code */
-  code_size = frida_remote_worker_context_emit_payload (rwc, code);
+  code_size = sunday_remote_worker_context_emit_payload (rwc, code);
 
-  memset (rwc, 0, sizeof (FridaRemoteWorkerContext));
+  memset (rwc, 0, sizeof (SundayRemoteWorkerContext));
 
   kernel32 = gum_process_find_module_by_name ("kernel32.dll");
-  gum_module_enumerate_exports (kernel32, frida_remote_worker_context_collect_kernel32_export, rwc);
+  gum_module_enumerate_exports (kernel32, sunday_remote_worker_context_collect_kernel32_export, rwc);
   g_object_unref (kernel32);
-  if (!frida_remote_worker_context_has_resolved_all_kernel32_functions (rwc))
+  if (!sunday_remote_worker_context_has_resolved_all_kernel32_functions (rwc))
     goto failed_to_resolve_kernel32_functions;
 
   StringCbCopyW (rwc->dll_path, sizeof (rwc->dll_path), details->dll_path);
@@ -330,7 +330,7 @@ frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjection
   page_size = gum_query_page_size ();
   g_assert (code_size <= page_size);
 
-  alloc_size = page_size + sizeof (FridaRemoteWorkerContext);
+  alloc_size = page_size + sizeof (SundayRemoteWorkerContext);
   rwc->entrypoint = VirtualAllocEx (details->process_handle, NULL, alloc_size, MEM_COMMIT, PAGE_READWRITE);
   if (rwc->entrypoint == NULL)
     goto virtual_alloc_ex_failed;
@@ -339,7 +339,7 @@ frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjection
     goto write_process_memory_failed;
 
   rwc->argument = GSIZE_TO_POINTER (GPOINTER_TO_SIZE (rwc->entrypoint) + page_size);
-  if (!WriteProcessMemory (details->process_handle, rwc->argument, rwc, sizeof (FridaRemoteWorkerContext), NULL))
+  if (!WriteProcessMemory (details->process_handle, rwc->argument, rwc, sizeof (SundayRemoteWorkerContext), NULL))
     goto write_process_memory_failed;
 
   if (!VirtualProtectEx (details->process_handle, rwc->entrypoint, page_size, PAGE_EXECUTE_READ, &old_protect))
@@ -352,16 +352,16 @@ frida_remote_worker_context_init (FridaRemoteWorkerContext * rwc, FridaInjection
 failed_to_resolve_kernel32_functions:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unexpected error while resolving kernel32 functions");
     goto error_common;
   }
 virtual_alloc_ex_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unexpected error allocating memory in target process (VirtualAllocEx returned 0x%08lx)",
         GetLastError ());
     goto error_common;
@@ -369,8 +369,8 @@ virtual_alloc_ex_failed:
 write_process_memory_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unexpected error writing to memory in target process (WriteProcessMemory returned 0x%08lx)",
         GetLastError ());
     goto error_common;
@@ -378,31 +378,31 @@ write_process_memory_failed:
 virtual_protect_ex_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unexpected error changing memory permission in target process (VirtualProtectEx returned 0x%08lx)",
         GetLastError ());
     goto error_common;
   }
 error_common:
   {
-    frida_remote_worker_context_destroy (rwc, details);
+    sunday_remote_worker_context_destroy (rwc, details);
     gum_free_pages (code);
     return FALSE;
   }
 }
 
 #define EMIT_ARM64_LOAD(reg, field) \
-    gum_arm64_writer_put_ldr_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaRemoteWorkerContext, field))
+    gum_arm64_writer_put_ldr_reg_reg_offset (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (SundayRemoteWorkerContext, field))
 #define EMIT_ARM64_LOAD_ADDRESS_OF(reg, field) \
-    gum_arm64_writer_put_add_reg_reg_imm (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaRemoteWorkerContext, field))
+    gum_arm64_writer_put_add_reg_reg_imm (&cw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (SundayRemoteWorkerContext, field))
 #define EMIT_ARM64_MOVE(dstreg, srcreg) \
     gum_arm64_writer_put_mov_reg_reg (&cw, ARM64_REG_##dstreg, ARM64_REG_##srcreg)
 #define EMIT_ARM64_CALL(reg) \
     gum_arm64_writer_put_blr_reg_no_auth (&cw, ARM64_REG_##reg)
 
 static gsize
-frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpointer code)
+sunday_remote_worker_context_emit_payload (SundayRemoteWorkerContext * rwc, gpointer code)
 {
   gsize code_size;
   const gchar * loadlibrary_failed = "loadlibrary_failed";
@@ -417,7 +417,7 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
   gum_arm64_writer_put_mov_reg_reg (&cw, ARM64_REG_FP, ARM64_REG_SP);
   gum_arm64_writer_put_push_reg_reg (&cw, ARM64_REG_X19, ARM64_REG_X20);
 
-  /* x20 = (FridaRemoteWorkerContext *) lpParameter */
+  /* x20 = (SundayRemoteWorkerContext *) lpParameter */
   EMIT_ARM64_MOVE (X20, X0);
 
   /* x19 = LoadLibrary (x20->dll_path) */
@@ -479,7 +479,7 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
   gum_x86_writer_put_push_reg (&cw, GUM_X86_XSI);
   gum_x86_writer_put_push_reg (&cw, GUM_X86_XDI); /* Alignment padding */
 
-  /* xbx = (FridaRemoteWorkerContext *) lpParameter */
+  /* xbx = (SundayRemoteWorkerContext *) lpParameter */
 #if GLIB_SIZEOF_VOID_P == 4
   gum_x86_writer_put_mov_reg_reg_offset_ptr (&cw, GUM_X86_EBX, GUM_X86_ESP, (3 + 1) * sizeof (gpointer));
 #else
@@ -488,9 +488,9 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
 
   /* xsi = LoadLibrary (xbx->dll_path) */
   gum_x86_writer_put_lea_reg_reg_offset (&cw, GUM_X86_XCX,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, dll_path));
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, dll_path));
   gum_x86_writer_put_call_reg_offset_ptr_with_arguments (&cw, GUM_CALL_SYSAPI,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, load_library_impl),
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, load_library_impl),
       1,
       GUM_ARG_REGISTER, GUM_X86_XCX);
   gum_x86_writer_put_test_reg_reg (&cw, GUM_X86_XAX, GUM_X86_XAX);
@@ -499,18 +499,18 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
 
   /* xax = GetProcAddress (xsi, xbx->entrypoint_name) */
   gum_x86_writer_put_lea_reg_reg_offset (&cw, GUM_X86_XDX,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, entrypoint_name));
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, entrypoint_name));
   gum_x86_writer_put_call_reg_offset_ptr_with_arguments (&cw, GUM_CALL_SYSAPI,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, get_proc_address_impl),
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, get_proc_address_impl),
       2,
       GUM_ARG_REGISTER, GUM_X86_XSI,
       GUM_ARG_REGISTER, GUM_X86_XDX);
 
   /* xax (xbx->entrypoint_data, &xbx->stay_resident, NULL) */
   gum_x86_writer_put_lea_reg_reg_offset (&cw, GUM_X86_XCX,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, entrypoint_data));
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, entrypoint_data));
   gum_x86_writer_put_lea_reg_reg_offset (&cw, GUM_X86_XDX,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, stay_resident));
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, stay_resident));
   gum_x86_writer_put_call_reg_with_arguments (&cw, GUM_CALL_CAPI, GUM_X86_XAX,
       3,
       GUM_ARG_REGISTER, GUM_X86_XCX,
@@ -519,13 +519,13 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
 
   /* if (!xbx->stay_resident) { */
   gum_x86_writer_put_mov_reg_reg_offset_ptr (&cw, GUM_X86_EAX,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, stay_resident));
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, stay_resident));
   gum_x86_writer_put_test_reg_reg (&cw, GUM_X86_EAX, GUM_X86_EAX);
   gum_x86_writer_put_jcc_short_label (&cw, X86_INS_JNE, skip_unload, GUM_NO_HINT);
 
   /* FreeLibrary (xsi) */
   gum_x86_writer_put_call_reg_offset_ptr_with_arguments (&cw, GUM_CALL_SYSAPI,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, free_library_impl),
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, free_library_impl),
       1,
       GUM_ARG_REGISTER, GUM_X86_XSI);
 
@@ -539,7 +539,7 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
   gum_x86_writer_put_label (&cw, loadlibrary_failed);
   /* result = GetLastError() */
   gum_x86_writer_put_call_reg_offset_ptr_with_arguments (&cw, GUM_CALL_SYSAPI,
-      GUM_X86_XBX, G_STRUCT_OFFSET (FridaRemoteWorkerContext, get_last_error_impl),
+      GUM_X86_XBX, G_STRUCT_OFFSET (SundayRemoteWorkerContext, get_last_error_impl),
       0);
 
   gum_x86_writer_put_label (&cw, return_result);
@@ -557,7 +557,7 @@ frida_remote_worker_context_emit_payload (FridaRemoteWorkerContext * rwc, gpoint
 }
 
 static void
-frida_remote_worker_context_destroy (FridaRemoteWorkerContext * rwc, FridaInjectionDetails * details)
+sunday_remote_worker_context_destroy (SundayRemoteWorkerContext * rwc, SundayInjectionDetails * details)
 {
   if (rwc->entrypoint != NULL)
   {
@@ -567,16 +567,16 @@ frida_remote_worker_context_destroy (FridaRemoteWorkerContext * rwc, FridaInject
 }
 
 static gboolean
-frida_remote_worker_context_has_resolved_all_kernel32_functions (const FridaRemoteWorkerContext * rwc)
+sunday_remote_worker_context_has_resolved_all_kernel32_functions (const SundayRemoteWorkerContext * rwc)
 {
   return (rwc->load_library_impl != NULL) && (rwc->get_proc_address_impl != NULL) &&
       (rwc->free_library_impl != NULL) && (rwc->virtual_free_impl != NULL);
 }
 
 static gboolean
-frida_remote_worker_context_collect_kernel32_export (const GumExportDetails * details, gpointer user_data)
+sunday_remote_worker_context_collect_kernel32_export (const GumExportDetails * details, gpointer user_data)
 {
-  FridaRemoteWorkerContext * rwc = user_data;
+  SundayRemoteWorkerContext * rwc = user_data;
 
   if (details->type != GUM_EXPORT_FUNCTION)
     return TRUE;
@@ -596,7 +596,7 @@ frida_remote_worker_context_collect_kernel32_export (const GumExportDetails * de
 }
 
 static gboolean
-frida_file_exists_and_is_readable (const WCHAR * filename)
+sunday_file_exists_and_is_readable (const WCHAR * filename)
 {
   HANDLE file;
 

@@ -5,108 +5,108 @@
 #include <stdint.h>
 #include <mach-o/loader.h>
 
-#define FRIDA_INT2_MASK  0x00000003U
-#define FRIDA_INT11_MASK 0x000007ffU
-#define FRIDA_INT16_MASK 0x0000ffffU
-#define FRIDA_INT32_MASK 0xffffffffU
+#define SUNDAY_INT2_MASK  0x00000003U
+#define SUNDAY_INT11_MASK 0x000007ffU
+#define SUNDAY_INT16_MASK 0x0000ffffU
+#define SUNDAY_INT32_MASK 0xffffffffU
 
-typedef uint8_t FridaUploadCommandType;
-typedef uint8_t FridaDarwinThreadedItemType;
+typedef uint8_t SundayUploadCommandType;
+typedef uint8_t SundayDarwinThreadedItemType;
 
-typedef void (* FridaConstructorFunc) (int argc, const char * argv[], const char * env[], const char * apple[], int * result);
+typedef void (* SundayConstructorFunc) (int argc, const char * argv[], const char * env[], const char * apple[], int * result);
 
-typedef struct _FridaChainedFixupsHeader FridaChainedFixupsHeader;
+typedef struct _SundayChainedFixupsHeader SundayChainedFixupsHeader;
 
-typedef struct _FridaChainedStartsInImage FridaChainedStartsInImage;
-typedef struct _FridaChainedStartsInSegment FridaChainedStartsInSegment;
-typedef uint16_t FridaChainedPtrFormat;
+typedef struct _SundayChainedStartsInImage SundayChainedStartsInImage;
+typedef struct _SundayChainedStartsInSegment SundayChainedStartsInSegment;
+typedef uint16_t SundayChainedPtrFormat;
 
-typedef struct _FridaChainedPtr64Rebase FridaChainedPtr64Rebase;
-typedef struct _FridaChainedPtr64Bind FridaChainedPtr64Bind;
-typedef struct _FridaChainedPtrArm64eRebase FridaChainedPtrArm64eRebase;
-typedef struct _FridaChainedPtrArm64eBind FridaChainedPtrArm64eBind;
-typedef struct _FridaChainedPtrArm64eBind24 FridaChainedPtrArm64eBind24;
-typedef struct _FridaChainedPtrArm64eAuthRebase FridaChainedPtrArm64eAuthRebase;
-typedef struct _FridaChainedPtrArm64eAuthBind FridaChainedPtrArm64eAuthBind;
-typedef struct _FridaChainedPtrArm64eAuthBind24 FridaChainedPtrArm64eAuthBind24;
+typedef struct _SundayChainedPtr64Rebase SundayChainedPtr64Rebase;
+typedef struct _SundayChainedPtr64Bind SundayChainedPtr64Bind;
+typedef struct _SundayChainedPtrArm64eRebase SundayChainedPtrArm64eRebase;
+typedef struct _SundayChainedPtrArm64eBind SundayChainedPtrArm64eBind;
+typedef struct _SundayChainedPtrArm64eBind24 SundayChainedPtrArm64eBind24;
+typedef struct _SundayChainedPtrArm64eAuthRebase SundayChainedPtrArm64eAuthRebase;
+typedef struct _SundayChainedPtrArm64eAuthBind SundayChainedPtrArm64eAuthBind;
+typedef struct _SundayChainedPtrArm64eAuthBind24 SundayChainedPtrArm64eAuthBind24;
 
-typedef uint32_t FridaChainedImportFormat;
-typedef uint32_t FridaChainedSymbolFormat;
+typedef uint32_t SundayChainedImportFormat;
+typedef uint32_t SundayChainedSymbolFormat;
 
-typedef struct _FridaChainedImport FridaChainedImport;
-typedef struct _FridaChainedImportAddend FridaChainedImportAddend;
-typedef struct _FridaChainedImportAddend64 FridaChainedImportAddend64;
+typedef struct _SundayChainedImport SundayChainedImport;
+typedef struct _SundayChainedImportAddend SundayChainedImportAddend;
+typedef struct _SundayChainedImportAddend64 SundayChainedImportAddend64;
 
-enum _FridaUploadCommandType
+enum _SundayUploadCommandType
 {
-  FRIDA_UPLOAD_COMMAND_WRITE = 1,
-  FRIDA_UPLOAD_COMMAND_APPLY_THREADED,
-  FRIDA_UPLOAD_COMMAND_PROCESS_FIXUPS,
-  FRIDA_UPLOAD_COMMAND_PROTECT,
-  FRIDA_UPLOAD_COMMAND_CONSTRUCT_FROM_POINTERS,
-  FRIDA_UPLOAD_COMMAND_CONSTRUCT_FROM_OFFSETS,
-  FRIDA_UPLOAD_COMMAND_CHECK,
+  SUNDAY_UPLOAD_COMMAND_WRITE = 1,
+  SUNDAY_UPLOAD_COMMAND_APPLY_THREADED,
+  SUNDAY_UPLOAD_COMMAND_PROCESS_FIXUPS,
+  SUNDAY_UPLOAD_COMMAND_PROTECT,
+  SUNDAY_UPLOAD_COMMAND_CONSTRUCT_FROM_POINTERS,
+  SUNDAY_UPLOAD_COMMAND_CONSTRUCT_FROM_OFFSETS,
+  SUNDAY_UPLOAD_COMMAND_CHECK,
 };
 
-enum _FridaDarwinThreadedItemType
+enum _SundayDarwinThreadedItemType
 {
-  FRIDA_DARWIN_THREADED_REBASE,
-  FRIDA_DARWIN_THREADED_BIND
+  SUNDAY_DARWIN_THREADED_REBASE,
+  SUNDAY_DARWIN_THREADED_BIND
 };
 
-struct _FridaChainedFixupsHeader
+struct _SundayChainedFixupsHeader
 {
   uint32_t fixups_version;
   uint32_t starts_offset;
   uint32_t imports_offset;
   uint32_t symbols_offset;
   uint32_t imports_count;
-  FridaChainedImportFormat imports_format;
-  FridaChainedSymbolFormat symbols_format;
+  SundayChainedImportFormat imports_format;
+  SundayChainedSymbolFormat symbols_format;
 };
 
-struct _FridaChainedStartsInImage
+struct _SundayChainedStartsInImage
 {
   uint32_t seg_count;
   uint32_t seg_info_offset[1];
 };
 
-struct _FridaChainedStartsInSegment
+struct _SundayChainedStartsInSegment
 {
   uint32_t size;
   uint16_t page_size;
-  FridaChainedPtrFormat pointer_format;
+  SundayChainedPtrFormat pointer_format;
   uint64_t segment_offset;
   uint32_t max_valid_pointer;
   uint16_t page_count;
   uint16_t page_start[1];
 };
 
-enum _FridaChainedPtrStart
+enum _SundayChainedPtrStart
 {
-  FRIDA_CHAINED_PTR_START_NONE  = 0xffff,
-  FRIDA_CHAINED_PTR_START_MULTI = 0x8000,
-  FRIDA_CHAINED_PTR_START_LAST  = 0x8000,
+  SUNDAY_CHAINED_PTR_START_NONE  = 0xffff,
+  SUNDAY_CHAINED_PTR_START_MULTI = 0x8000,
+  SUNDAY_CHAINED_PTR_START_LAST  = 0x8000,
 };
 
-enum _FridaChainedPtrFormat
+enum _SundayChainedPtrFormat
 {
-  FRIDA_CHAINED_PTR_ARM64E              =  1,
-  FRIDA_CHAINED_PTR_64                  =  2,
-  FRIDA_CHAINED_PTR_32                  =  3,
-  FRIDA_CHAINED_PTR_32_CACHE            =  4,
-  FRIDA_CHAINED_PTR_32_FIRMWARE         =  5,
-  FRIDA_CHAINED_PTR_64_OFFSET           =  6,
-  FRIDA_CHAINED_PTR_ARM64E_OFFSET       =  7,
-  FRIDA_CHAINED_PTR_ARM64E_KERNEL       =  7,
-  FRIDA_CHAINED_PTR_64_KERNEL_CACHE     =  8,
-  FRIDA_CHAINED_PTR_ARM64E_USERLAND     =  9,
-  FRIDA_CHAINED_PTR_ARM64E_FIRMWARE     = 10,
-  FRIDA_CHAINED_PTR_X86_64_KERNEL_CACHE = 11,
-  FRIDA_CHAINED_PTR_ARM64E_USERLAND24   = 12,
+  SUNDAY_CHAINED_PTR_ARM64E              =  1,
+  SUNDAY_CHAINED_PTR_64                  =  2,
+  SUNDAY_CHAINED_PTR_32                  =  3,
+  SUNDAY_CHAINED_PTR_32_CACHE            =  4,
+  SUNDAY_CHAINED_PTR_32_FIRMWARE         =  5,
+  SUNDAY_CHAINED_PTR_64_OFFSET           =  6,
+  SUNDAY_CHAINED_PTR_ARM64E_OFFSET       =  7,
+  SUNDAY_CHAINED_PTR_ARM64E_KERNEL       =  7,
+  SUNDAY_CHAINED_PTR_64_KERNEL_CACHE     =  8,
+  SUNDAY_CHAINED_PTR_ARM64E_USERLAND     =  9,
+  SUNDAY_CHAINED_PTR_ARM64E_FIRMWARE     = 10,
+  SUNDAY_CHAINED_PTR_X86_64_KERNEL_CACHE = 11,
+  SUNDAY_CHAINED_PTR_ARM64E_USERLAND24   = 12,
 };
 
-struct _FridaChainedPtr64Rebase
+struct _SundayChainedPtr64Rebase
 {
   uint64_t target   : 36,
            high8    :  8,
@@ -115,7 +115,7 @@ struct _FridaChainedPtr64Rebase
            bind     :  1;
 };
 
-struct _FridaChainedPtr64Bind
+struct _SundayChainedPtr64Bind
 {
   uint64_t ordinal  : 24,
            addend   :  8,
@@ -124,7 +124,7 @@ struct _FridaChainedPtr64Bind
            bind     :  1;
 };
 
-struct _FridaChainedPtrArm64eRebase
+struct _SundayChainedPtrArm64eRebase
 {
   uint64_t target : 43,
            high8  :  8,
@@ -133,7 +133,7 @@ struct _FridaChainedPtrArm64eRebase
            auth   :  1;
 };
 
-struct _FridaChainedPtrArm64eBind
+struct _SundayChainedPtrArm64eBind
 {
   uint64_t ordinal : 16,
            zero    : 16,
@@ -143,7 +143,7 @@ struct _FridaChainedPtrArm64eBind
            auth    :  1;
 };
 
-struct _FridaChainedPtrArm64eBind24
+struct _SundayChainedPtrArm64eBind24
 {
   uint64_t ordinal : 24,
            zero    :  8,
@@ -153,7 +153,7 @@ struct _FridaChainedPtrArm64eBind24
            auth    :  1;
 };
 
-struct _FridaChainedPtrArm64eAuthRebase
+struct _SundayChainedPtrArm64eAuthRebase
 {
   uint64_t target    : 32,
            diversity : 16,
@@ -164,7 +164,7 @@ struct _FridaChainedPtrArm64eAuthRebase
            auth      :  1;
 };
 
-struct _FridaChainedPtrArm64eAuthBind
+struct _SundayChainedPtrArm64eAuthBind
 {
   uint64_t ordinal   : 16,
            zero      : 16,
@@ -176,7 +176,7 @@ struct _FridaChainedPtrArm64eAuthBind
            auth      :  1;
 };
 
-struct _FridaChainedPtrArm64eAuthBind24
+struct _SundayChainedPtrArm64eAuthBind24
 {
   uint64_t ordinal   : 24,
            zero      :  8,
@@ -188,27 +188,27 @@ struct _FridaChainedPtrArm64eAuthBind24
            auth      :  1;
 };
 
-enum _FridaChainedImportFormat
+enum _SundayChainedImportFormat
 {
-  FRIDA_CHAINED_IMPORT          = 1,
-  FRIDA_CHAINED_IMPORT_ADDEND   = 2,
-  FRIDA_CHAINED_IMPORT_ADDEND64 = 3,
+  SUNDAY_CHAINED_IMPORT          = 1,
+  SUNDAY_CHAINED_IMPORT_ADDEND   = 2,
+  SUNDAY_CHAINED_IMPORT_ADDEND64 = 3,
 };
 
-enum _FridaChainedSymbolFormat
+enum _SundayChainedSymbolFormat
 {
-  FRIDA_CHAINED_SYMBOL_UNCOMPRESSED,
-  FRIDA_CHAINED_SYMBOL_ZLIB_COMPRESSED,
+  SUNDAY_CHAINED_SYMBOL_UNCOMPRESSED,
+  SUNDAY_CHAINED_SYMBOL_ZLIB_COMPRESSED,
 };
 
-struct _FridaChainedImport
+struct _SundayChainedImport
 {
   uint32_t lib_ordinal :  8,
            weak_import :  1,
            name_offset : 23;
 };
 
-struct _FridaChainedImportAddend
+struct _SundayChainedImportAddend
 {
   uint32_t lib_ordinal :  8,
            weak_import :  1,
@@ -216,7 +216,7 @@ struct _FridaChainedImportAddend
   int32_t  addend;
 };
 
-struct _FridaChainedImportAddend64
+struct _SundayChainedImportAddend64
 {
   uint64_t lib_ordinal : 16,
            weak_import :  1,
@@ -225,7 +225,7 @@ struct _FridaChainedImportAddend64
   uint64_t addend;
 };
 
-#define FRIDA_TEMP_FAILURE_RETRY(expression) \
+#define SUNDAY_TEMP_FAILURE_RETRY(expression) \
   ({ \
     ssize_t __result; \
     \
@@ -235,27 +235,27 @@ struct _FridaChainedImportAddend64
     __result; \
   })
 
-static void frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uint16_t num_symbols, const uint64_t * symbols,
+static void sunday_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uint16_t num_symbols, const uint64_t * symbols,
     uint16_t num_regions, uint64_t * regions);
 
-static void frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, struct mach_header_64 * mach_header,
-    size_t preferred_base_address, const FridaUploadApi * api);
-static void frida_process_chained_fixups_in_segment_generic64 (void * cursor, FridaChainedPtrFormat format, uint64_t actual_base_address,
+static void sunday_process_chained_fixups (const SundayChainedFixupsHeader * fixups_header, struct mach_header_64 * mach_header,
+    size_t preferred_base_address, const SundayUploadApi * api);
+static void sunday_process_chained_fixups_in_segment_generic64 (void * cursor, SundayChainedPtrFormat format, uint64_t actual_base_address,
     uint64_t preferred_base_address, void ** bound_pointers);
-static void frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFormat format, uint64_t actual_base_address,
+static void sunday_process_chained_fixups_in_segment_arm64e (void * cursor, SundayChainedPtrFormat format, uint64_t actual_base_address,
     uint64_t preferred_base_address, void ** bound_pointers);
-static void * frida_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * symbol_strings, uint32_t symbol_offset,
-    const FridaUploadApi * api);
+static void * sunday_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * symbol_strings, uint32_t symbol_offset,
+    const SundayUploadApi * api);
 
-static void * frida_sign_pointer (void * ptr, uint8_t key, uintptr_t diversity, bool use_address_diversity, void * address_of_ptr);
-static const char * frida_symbol_name_from_darwin (const char * name);
-static int64_t frida_sign_extend_int19 (uint64_t i19);
+static void * sunday_sign_pointer (void * ptr, uint8_t key, uintptr_t diversity, bool use_address_diversity, void * address_of_ptr);
+static const char * sunday_symbol_name_from_darwin (const char * name);
+static int64_t sunday_sign_extend_int19 (uint64_t i19);
 
-static bool frida_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, const FridaUploadApi * api);
-static bool frida_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_written, const FridaUploadApi * api);
+static bool sunday_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, const SundayUploadApi * api);
+static bool sunday_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_written, const SundayUploadApi * api);
 
 int64_t
-frida_receive (int listener_fd, uint64_t session_id_top, uint64_t session_id_bottom, const char * apple[], const FridaUploadApi * api)
+sunday_receive (int listener_fd, uint64_t session_id_top, uint64_t session_id_bottom, const char * apple[], const SundayUploadApi * api)
 {
   int result = 0;
   mach_port_t task;
@@ -276,37 +276,37 @@ frida_receive (int listener_fd, uint64_t session_id_top, uint64_t session_id_bot
 
     addr_len = sizeof (addr);
 
-    res = FRIDA_TEMP_FAILURE_RETRY (api->accept (listener_fd, (struct sockaddr *) &addr, &addr_len));
+    res = SUNDAY_TEMP_FAILURE_RETRY (api->accept (listener_fd, (struct sockaddr *) &addr, &addr_len));
     if (res == -1)
       goto beach;
     client_fd = res;
 
-    #define FRIDA_READ_VALUE(v) \
-        if (!frida_read_chunk (client_fd, &(v), sizeof (v), NULL, api)) \
+    #define SUNDAY_READ_VALUE(v) \
+        if (!sunday_read_chunk (client_fd, &(v), sizeof (v), NULL, api)) \
           goto next_client
 
-    #define FRIDA_WRITE_VALUE(v) \
-        if (!frida_write_chunk (client_fd, &(v), sizeof (v), NULL, api)) \
+    #define SUNDAY_WRITE_VALUE(v) \
+        if (!sunday_write_chunk (client_fd, &(v), sizeof (v), NULL, api)) \
           goto next_client
 
-    FRIDA_READ_VALUE (client_sid);
+    SUNDAY_READ_VALUE (client_sid);
     if (client_sid[0] != session_id_top || client_sid[1] != session_id_bottom)
       goto next_client;
 
     expecting_client = false;
 
-    FRIDA_WRITE_VALUE (ACK_MAGIC);
+    SUNDAY_WRITE_VALUE (ACK_MAGIC);
 
     while (true)
     {
       bool success = false;
-      FridaUploadCommandType command_type;
+      SundayUploadCommandType command_type;
 
-      FRIDA_READ_VALUE (command_type);
+      SUNDAY_READ_VALUE (command_type);
 
       switch (command_type)
       {
-        case FRIDA_UPLOAD_COMMAND_WRITE:
+        case SUNDAY_UPLOAD_COMMAND_WRITE:
         {
           uint64_t address;
           uint32_t size;
@@ -314,8 +314,8 @@ frida_receive (int listener_fd, uint64_t session_id_top, uint64_t session_id_bot
           vm_prot_t cur_prot, max_prot;
           size_t n;
 
-          FRIDA_READ_VALUE (address);
-          FRIDA_READ_VALUE (size);
+          SUNDAY_READ_VALUE (address);
+          SUNDAY_READ_VALUE (size);
 
           writable_address = 0;
           success = api->vm_remap (task, &writable_address, size, 0, VM_FLAGS_ANYWHERE, task, address, FALSE, &cur_prot, &max_prot,
@@ -327,7 +327,7 @@ frida_receive (int listener_fd, uint64_t session_id_top, uint64_t session_id_bot
           if (!success)
             goto unmap_writable;
 
-          success = frida_read_chunk (client_fd, (void *) writable_address, size, &n, api);
+          success = sunday_read_chunk (client_fd, (void *) writable_address, size, &n, api);
           if (!success)
             goto unmap_writable;
 
@@ -339,70 +339,70 @@ unmap_writable:
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_APPLY_THREADED:
+        case SUNDAY_UPLOAD_COMMAND_APPLY_THREADED:
         {
           uint64_t preferred_base_address, slide;
           uint16_t num_symbols, num_regions;
 
-          FRIDA_READ_VALUE (preferred_base_address);
-          FRIDA_READ_VALUE (slide);
+          SUNDAY_READ_VALUE (preferred_base_address);
+          SUNDAY_READ_VALUE (slide);
 
-          FRIDA_READ_VALUE (num_symbols);
+          SUNDAY_READ_VALUE (num_symbols);
           uint64_t symbols[num_symbols];
-          if (!frida_read_chunk (client_fd, symbols, num_symbols * sizeof (uint64_t), NULL, api))
+          if (!sunday_read_chunk (client_fd, symbols, num_symbols * sizeof (uint64_t), NULL, api))
             goto next_client;
 
-          FRIDA_READ_VALUE (num_regions);
+          SUNDAY_READ_VALUE (num_regions);
           uint64_t regions[num_regions];
-          if (!frida_read_chunk (client_fd, regions, num_regions * sizeof (uint64_t), NULL, api))
+          if (!sunday_read_chunk (client_fd, regions, num_regions * sizeof (uint64_t), NULL, api))
             goto next_client;
 
-          frida_apply_threaded_items (preferred_base_address, slide, num_symbols, symbols, num_regions, regions);
+          sunday_apply_threaded_items (preferred_base_address, slide, num_symbols, symbols, num_regions, regions);
 
           success = true;
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_PROCESS_FIXUPS:
+        case SUNDAY_UPLOAD_COMMAND_PROCESS_FIXUPS:
         {
           uint64_t fixups_header_address, mach_header_address, preferred_base_address;
 
-          FRIDA_READ_VALUE (fixups_header_address);
-          FRIDA_READ_VALUE (mach_header_address);
-          FRIDA_READ_VALUE (preferred_base_address);
+          SUNDAY_READ_VALUE (fixups_header_address);
+          SUNDAY_READ_VALUE (mach_header_address);
+          SUNDAY_READ_VALUE (preferred_base_address);
 
-          frida_process_chained_fixups ((const FridaChainedFixupsHeader *) fixups_header_address,
+          sunday_process_chained_fixups ((const SundayChainedFixupsHeader *) fixups_header_address,
               (struct mach_header_64 *) mach_header_address, (size_t) preferred_base_address, api);
 
           success = true;
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_PROTECT:
+        case SUNDAY_UPLOAD_COMMAND_PROTECT:
         {
           uint64_t address;
           uint32_t size;
           int32_t prot;
 
-          FRIDA_READ_VALUE (address);
-          FRIDA_READ_VALUE (size);
-          FRIDA_READ_VALUE (prot);
+          SUNDAY_READ_VALUE (address);
+          SUNDAY_READ_VALUE (size);
+          SUNDAY_READ_VALUE (prot);
 
           success = api->mprotect ((void *) address, size, prot) == 0;
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_CONSTRUCT_FROM_POINTERS:
+        case SUNDAY_UPLOAD_COMMAND_CONSTRUCT_FROM_POINTERS:
         {
           uint64_t address;
           uint32_t count;
-          FridaConstructorFunc * constructors;
+          SundayConstructorFunc * constructors;
           uint32_t i;
 
-          FRIDA_READ_VALUE (address);
-          FRIDA_READ_VALUE (count);
+          SUNDAY_READ_VALUE (address);
+          SUNDAY_READ_VALUE (count);
 
-          constructors = (FridaConstructorFunc *) address;
+          constructors = (SundayConstructorFunc *) address;
 
           for (i = 0; i != count; i++)
           {
@@ -417,7 +417,7 @@ unmap_writable:
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_CONSTRUCT_FROM_OFFSETS:
+        case SUNDAY_UPLOAD_COMMAND_CONSTRUCT_FROM_OFFSETS:
         {
           uint64_t address;
           uint32_t count;
@@ -425,20 +425,20 @@ unmap_writable:
           uint32_t * constructor_offsets;
           uint32_t i;
 
-          FRIDA_READ_VALUE (address);
-          FRIDA_READ_VALUE (count);
-          FRIDA_READ_VALUE (mach_header_address);
+          SUNDAY_READ_VALUE (address);
+          SUNDAY_READ_VALUE (count);
+          SUNDAY_READ_VALUE (mach_header_address);
 
           constructor_offsets = (uint32_t *) address;
 
           for (i = 0; i != count; i++)
           {
-            FridaConstructorFunc constructor;
+            SundayConstructorFunc constructor;
             const int argc = 0;
             const char * argv[] = { NULL };
             const char * env[] = { NULL };
 
-            constructor = (FridaConstructorFunc) (mach_header_address + constructor_offsets[i]);
+            constructor = (SundayConstructorFunc) (mach_header_address + constructor_offsets[i]);
 
             constructor (argc, argv, env, apple, &result);
           }
@@ -447,9 +447,9 @@ unmap_writable:
 
           break;
         }
-        case FRIDA_UPLOAD_COMMAND_CHECK:
+        case SUNDAY_UPLOAD_COMMAND_CHECK:
         {
-          FRIDA_WRITE_VALUE (ACK_MAGIC);
+          SUNDAY_WRITE_VALUE (ACK_MAGIC);
 
           success = true;
 
@@ -486,7 +486,7 @@ beach:
 }
 
 static void
-frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uint16_t num_symbols, const uint64_t * symbols,
+sunday_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uint16_t num_symbols, const uint64_t * symbols,
     uint16_t num_regions, uint64_t * regions)
 {
   uint16_t i;
@@ -500,7 +500,7 @@ frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uin
     {
       uint64_t value;
       bool is_authenticated;
-      FridaDarwinThreadedItemType type;
+      SundayDarwinThreadedItemType type;
       uint8_t key;
       bool has_address_diversity;
       uint16_t diversity;
@@ -510,26 +510,26 @@ frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uin
 
       is_authenticated      = (value >> 63) & 1;
       type                  = (value >> 62) & 1;
-      delta                 = (value >> 51) & FRIDA_INT11_MASK;
-      key                   = (value >> 49) & FRIDA_INT2_MASK;
+      delta                 = (value >> 51) & SUNDAY_INT11_MASK;
+      key                   = (value >> 49) & SUNDAY_INT2_MASK;
       has_address_diversity = (value >> 48) & 1;
-      diversity             = (value >> 32) & FRIDA_INT16_MASK;
+      diversity             = (value >> 32) & SUNDAY_INT16_MASK;
 
-      if (type == FRIDA_DARWIN_THREADED_BIND)
+      if (type == SUNDAY_DARWIN_THREADED_BIND)
       {
         uint16_t bind_ordinal;
 
-        bind_ordinal = value & FRIDA_INT16_MASK;
+        bind_ordinal = value & SUNDAY_INT16_MASK;
 
         bound_value = symbols[bind_ordinal];
       }
-      else if (type == FRIDA_DARWIN_THREADED_REBASE)
+      else if (type == SUNDAY_DARWIN_THREADED_REBASE)
       {
         uint64_t rebase_address;
 
         if (is_authenticated)
         {
-          rebase_address = value & FRIDA_INT32_MASK;
+          rebase_address = value & SUNDAY_INT32_MASK;
         }
         else
         {
@@ -558,7 +558,7 @@ frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uin
 
       if (is_authenticated)
       {
-        *slot = (uint64_t) frida_sign_pointer ((void *) bound_value, key, diversity, has_address_diversity, slot);
+        *slot = (uint64_t) sunday_sign_pointer ((void *) bound_value, key, diversity, has_address_diversity, slot);
       }
       else
       {
@@ -572,8 +572,8 @@ frida_apply_threaded_items (uint64_t preferred_base_address, uint64_t slide, uin
 }
 
 static void
-frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, struct mach_header_64 * mach_header,
-    size_t preferred_base_address, const FridaUploadApi * api)
+sunday_process_chained_fixups (const SundayChainedFixupsHeader * fixups_header, struct mach_header_64 * mach_header,
+    size_t preferred_base_address, const SundayUploadApi * api)
 {
   mach_port_t task;
   mach_vm_address_t slab_start;
@@ -586,7 +586,7 @@ frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, st
   void ** bound_pointers;
   size_t bound_count, i;
   const char * symbols;
-  const FridaChainedStartsInImage * image_starts;
+  const SundayChainedStartsInImage * image_starts;
   uint32_t seg_index;
 
   task = api->_mach_task_self ();
@@ -635,44 +635,44 @@ frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, st
 
   switch (fixups_header->imports_format)
   {
-    case FRIDA_CHAINED_IMPORT:
+    case SUNDAY_CHAINED_IMPORT:
     {
-      const FridaChainedImport * imports = ((const void *) fixups_header + fixups_header->imports_offset);
+      const SundayChainedImport * imports = ((const void *) fixups_header + fixups_header->imports_offset);
 
       for (i = 0; i != bound_count; i++)
       {
-        const FridaChainedImport * import = &imports[i];
+        const SundayChainedImport * import = &imports[i];
 
-        bound_pointers[i] = frida_resolve_import (dylib_handles,
+        bound_pointers[i] = sunday_resolve_import (dylib_handles,
             import->lib_ordinal, symbols, import->name_offset, api);
       }
 
       break;
     }
-    case FRIDA_CHAINED_IMPORT_ADDEND:
+    case SUNDAY_CHAINED_IMPORT_ADDEND:
     {
-      const FridaChainedImportAddend * imports = ((const void *) fixups_header + fixups_header->imports_offset);
+      const SundayChainedImportAddend * imports = ((const void *) fixups_header + fixups_header->imports_offset);
 
       for (i = 0; i != bound_count; i++)
       {
-        const FridaChainedImportAddend * import = &imports[i];
+        const SundayChainedImportAddend * import = &imports[i];
 
-        bound_pointers[i] = frida_resolve_import (dylib_handles,
+        bound_pointers[i] = sunday_resolve_import (dylib_handles,
             import->lib_ordinal, symbols, import->name_offset, api);
         bound_pointers[i] += import->addend;
       }
 
       break;
     }
-    case FRIDA_CHAINED_IMPORT_ADDEND64:
+    case SUNDAY_CHAINED_IMPORT_ADDEND64:
     {
-      const FridaChainedImportAddend64 * imports = ((const void *) fixups_header + fixups_header->imports_offset);
+      const SundayChainedImportAddend64 * imports = ((const void *) fixups_header + fixups_header->imports_offset);
 
       for (i = 0; i != bound_count; i++)
       {
-        const FridaChainedImportAddend64 * import = &imports[i];
+        const SundayChainedImportAddend64 * import = &imports[i];
 
-        bound_pointers[i] = frida_resolve_import (dylib_handles,
+        bound_pointers[i] = sunday_resolve_import (dylib_handles,
             import->lib_ordinal, symbols, import->name_offset, api);
         bound_pointers[i] += import->addend;
       }
@@ -681,19 +681,19 @@ frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, st
     }
   }
 
-  image_starts = (const FridaChainedStartsInImage *) ((const void *) fixups_header + fixups_header->starts_offset);
+  image_starts = (const SundayChainedStartsInImage *) ((const void *) fixups_header + fixups_header->starts_offset);
 
   for (seg_index = 0; seg_index != image_starts->seg_count; seg_index++)
   {
     const uint32_t seg_offset = image_starts->seg_info_offset[seg_index];
-    const FridaChainedStartsInSegment * seg_starts;
-    FridaChainedPtrFormat format;
+    const SundayChainedStartsInSegment * seg_starts;
+    SundayChainedPtrFormat format;
     uint16_t page_index;
 
     if (seg_offset == 0)
       continue;
 
-    seg_starts = (const FridaChainedStartsInSegment *) ((const void *) image_starts + seg_offset);
+    seg_starts = (const SundayChainedStartsInSegment *) ((const void *) image_starts + seg_offset);
     format = seg_starts->pointer_format;
 
     for (page_index = 0; page_index != seg_starts->page_count; page_index++)
@@ -702,19 +702,19 @@ frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, st
       void * cursor;
 
       start = seg_starts->page_start[page_index];
-      if (start == FRIDA_CHAINED_PTR_START_NONE)
+      if (start == SUNDAY_CHAINED_PTR_START_NONE)
         continue;
       /* Ignoring MULTI for now as it only applies to 32-bit formats. */
 
       cursor = (void *) mach_header + seg_starts->segment_offset + (page_index * seg_starts->page_size) + start;
 
-      if (format == FRIDA_CHAINED_PTR_64 || format == FRIDA_CHAINED_PTR_64_OFFSET)
+      if (format == SUNDAY_CHAINED_PTR_64 || format == SUNDAY_CHAINED_PTR_64_OFFSET)
       {
-        frida_process_chained_fixups_in_segment_generic64 (cursor, format, (uintptr_t) mach_header, preferred_base_address, bound_pointers);
+        sunday_process_chained_fixups_in_segment_generic64 (cursor, format, (uintptr_t) mach_header, preferred_base_address, bound_pointers);
       }
       else
       {
-        frida_process_chained_fixups_in_segment_arm64e (cursor, format, (uintptr_t) mach_header, preferred_base_address, bound_pointers);
+        sunday_process_chained_fixups_in_segment_arm64e (cursor, format, (uintptr_t) mach_header, preferred_base_address, bound_pointers);
       }
     }
   }
@@ -723,7 +723,7 @@ frida_process_chained_fixups (const FridaChainedFixupsHeader * fixups_header, st
 }
 
 static void
-frida_process_chained_fixups_in_segment_generic64 (void * cursor, FridaChainedPtrFormat format, uint64_t actual_base_address,
+sunday_process_chained_fixups_in_segment_generic64 (void * cursor, SundayChainedPtrFormat format, uint64_t actual_base_address,
     uint64_t preferred_base_address, void ** bound_pointers)
 {
   const int64_t slide = actual_base_address - preferred_base_address;
@@ -736,7 +736,7 @@ frida_process_chained_fixups_in_segment_generic64 (void * cursor, FridaChainedPt
 
     if ((*slot >> 63) == 0)
     {
-      FridaChainedPtr64Rebase * item = cursor;
+      SundayChainedPtr64Rebase * item = cursor;
       uint64_t top_8_bits, bottom_36_bits, unpacked_target;
 
       delta = item->next;
@@ -745,14 +745,14 @@ frida_process_chained_fixups_in_segment_generic64 (void * cursor, FridaChainedPt
       bottom_36_bits = item->target;
       unpacked_target = top_8_bits | bottom_36_bits;
 
-      if (format == FRIDA_CHAINED_PTR_64_OFFSET)
+      if (format == SUNDAY_CHAINED_PTR_64_OFFSET)
         *slot = actual_base_address + unpacked_target;
       else
         *slot = unpacked_target + slide;
     }
     else
     {
-      FridaChainedPtr64Bind * item = cursor;
+      SundayChainedPtr64Bind * item = cursor;
 
       delta = item->next;
 
@@ -767,7 +767,7 @@ frida_process_chained_fixups_in_segment_generic64 (void * cursor, FridaChainedPt
 }
 
 static void
-frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFormat format, uint64_t actual_base_address,
+sunday_process_chained_fixups_in_segment_arm64e (void * cursor, SundayChainedPtrFormat format, uint64_t actual_base_address,
     uint64_t preferred_base_address, void ** bound_pointers)
 {
   const int64_t slide = actual_base_address - preferred_base_address;
@@ -782,7 +782,7 @@ frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFo
     {
       case 0b00:
       {
-        FridaChainedPtrArm64eRebase * item = cursor;
+        SundayChainedPtrArm64eRebase * item = cursor;
         uint64_t top_8_bits, bottom_43_bits, unpacked_target;
 
         delta = item->next;
@@ -792,7 +792,7 @@ frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFo
 
         unpacked_target = top_8_bits | bottom_43_bits;
 
-        if (format == FRIDA_CHAINED_PTR_ARM64E)
+        if (format == SUNDAY_CHAINED_PTR_ARM64E)
           *slot = unpacked_target + slide;
         else
           *slot = actual_base_address + unpacked_target;
@@ -801,45 +801,45 @@ frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFo
       }
       case 0b01:
       {
-        FridaChainedPtrArm64eBind * item = cursor;
-        FridaChainedPtrArm64eBind24 * item24 = cursor;
+        SundayChainedPtrArm64eBind * item = cursor;
+        SundayChainedPtrArm64eBind24 * item24 = cursor;
         uint32_t ordinal;
 
         delta = item->next;
 
-        ordinal = (format == FRIDA_CHAINED_PTR_ARM64E_USERLAND24)
+        ordinal = (format == SUNDAY_CHAINED_PTR_ARM64E_USERLAND24)
             ? item24->ordinal
             : item->ordinal;
 
         *slot = (uint64_t) (bound_pointers[ordinal] +
-            frida_sign_extend_int19 (item->addend));
+            sunday_sign_extend_int19 (item->addend));
 
         break;
       }
       case 0b10:
       {
-        FridaChainedPtrArm64eAuthRebase * item = cursor;
+        SundayChainedPtrArm64eAuthRebase * item = cursor;
 
         delta = item->next;
 
-        *slot = (uint64_t) frida_sign_pointer ((void *) (preferred_base_address + item->target + slide), item->key, item->diversity,
+        *slot = (uint64_t) sunday_sign_pointer ((void *) (preferred_base_address + item->target + slide), item->key, item->diversity,
             item->addr_div, slot);
 
         break;
       }
       case 0b11:
       {
-        FridaChainedPtrArm64eAuthBind * item = cursor;
-        FridaChainedPtrArm64eAuthBind24 * item24 = cursor;
+        SundayChainedPtrArm64eAuthBind * item = cursor;
+        SundayChainedPtrArm64eAuthBind24 * item24 = cursor;
         uint32_t ordinal;
 
         delta = item->next;
 
-        ordinal = (format == FRIDA_CHAINED_PTR_ARM64E_USERLAND24)
+        ordinal = (format == SUNDAY_CHAINED_PTR_ARM64E_USERLAND24)
             ? item24->ordinal
             : item->ordinal;
 
-        *slot = (uint64_t) frida_sign_pointer (bound_pointers[ordinal], item->key, item->diversity, item->addr_div, slot);
+        *slot = (uint64_t) sunday_sign_pointer (bound_pointers[ordinal], item->key, item->diversity, item->addr_div, slot);
 
         break;
       }
@@ -853,8 +853,8 @@ frida_process_chained_fixups_in_segment_arm64e (void * cursor, FridaChainedPtrFo
 }
 
 static void *
-frida_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * symbol_strings, uint32_t symbol_offset,
-    const FridaUploadApi * api)
+sunday_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * symbol_strings, uint32_t symbol_offset,
+    const SundayUploadApi * api)
 {
   void * result;
   const char * raw_name, * name;
@@ -863,7 +863,7 @@ frida_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * sym
     return NULL; /* Placeholder if we ever need to support this. */
 
   raw_name = symbol_strings + symbol_offset;
-  name = frida_symbol_name_from_darwin (raw_name);
+  name = sunday_symbol_name_from_darwin (raw_name);
 
   result = api->dlsym (dylib_handles[dylib_ordinal - 1], name);
 
@@ -873,7 +873,7 @@ frida_resolve_import (void ** dylib_handles, int dylib_ordinal, const char * sym
 }
 
 static void *
-frida_sign_pointer (void * ptr, uint8_t key, uintptr_t diversity, bool use_address_diversity, void * address_of_ptr)
+sunday_sign_pointer (void * ptr, uint8_t key, uintptr_t diversity, bool use_address_diversity, void * address_of_ptr)
 {
   void * p = ptr;
   uintptr_t d = diversity;
@@ -901,13 +901,13 @@ frida_sign_pointer (void * ptr, uint8_t key, uintptr_t diversity, bool use_addre
 }
 
 static const char *
-frida_symbol_name_from_darwin (const char * name)
+sunday_symbol_name_from_darwin (const char * name)
 {
   return (name[0] == '_') ? name + 1 : name;
 }
 
 static int64_t
-frida_sign_extend_int19 (uint64_t i19)
+sunday_sign_extend_int19 (uint64_t i19)
 {
   int64_t result;
   bool sign_bit_set;
@@ -922,7 +922,7 @@ frida_sign_extend_int19 (uint64_t i19)
 }
 
 static bool
-frida_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, const FridaUploadApi * api)
+sunday_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, const SundayUploadApi * api)
 {
   void * cursor = buffer;
   size_t remaining = length;
@@ -934,7 +934,7 @@ frida_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, con
   {
     ssize_t n;
 
-    n = FRIDA_TEMP_FAILURE_RETRY (api->read (fd, cursor, remaining));
+    n = SUNDAY_TEMP_FAILURE_RETRY (api->read (fd, cursor, remaining));
     if (n <= 0)
       return false;
 
@@ -949,7 +949,7 @@ frida_read_chunk (int fd, void * buffer, size_t length, size_t * bytes_read, con
 }
 
 static bool
-frida_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_written, const FridaUploadApi * api)
+sunday_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_written, const SundayUploadApi * api)
 {
   const void * cursor = buffer;
   size_t remaining = length;
@@ -961,7 +961,7 @@ frida_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_wr
   {
     ssize_t n;
 
-    n = FRIDA_TEMP_FAILURE_RETRY (api->write (fd, cursor, remaining));
+    n = SUNDAY_TEMP_FAILURE_RETRY (api->write (fd, cursor, remaining));
     if (n <= 0)
       return false;
 
@@ -984,11 +984,11 @@ frida_write_chunk (int fd, const void * buffer, size_t length, size_t * bytes_wr
 # undef BUILDING_TEST_PROGRAM
 # include "upload-listener.c"
 # define BUILDING_TEST_PROGRAM
-# undef FRIDA_WRITE_VALUE
+# undef SUNDAY_WRITE_VALUE
 
-typedef struct _FridaTestState FridaTestState;
+typedef struct _SundayTestState SundayTestState;
 
-struct _FridaTestState
+struct _SundayTestState
 {
   uint16_t port;
 
@@ -998,24 +998,24 @@ struct _FridaTestState
   uint8_t target_a[4];
   uint8_t target_b[2];
 
-  const FridaUploadApi * api;
+  const SundayUploadApi * api;
 };
 
-static void * frida_emulate_client (void * user_data);
+static void * sunday_emulate_client (void * user_data);
 
 int
 main (void)
 {
-  const FridaUploadApi api = FRIDA_UPLOAD_API_INIT;
+  const SundayUploadApi api = SUNDAY_UPLOAD_API_INIT;
   uint64_t result;
   uint8_t error_code;
   uint32_t listener_fd;
   uint16_t port;
   pthread_t client_thread;
-  FridaTestState state;
+  SundayTestState state;
   const char * apple[] = { NULL };
 
-  result = frida_listen (FRIDA_RX_BUFFER_SIZE, &api);
+  result = sunday_listen (SUNDAY_RX_BUFFER_SIZE, &api);
 
   error_code  = (result >> 56) & 0xff;
   listener_fd = (result >> 16) & 0xffffffff;
@@ -1039,9 +1039,9 @@ main (void)
 
   state.api = &api;
 
-  pthread_create (&client_thread, NULL, frida_emulate_client, &state);
+  pthread_create (&client_thread, NULL, sunday_emulate_client, &state);
 
-  frida_receive (listener_fd, 1, 2, apple, &api);
+  sunday_receive (listener_fd, 1, 2, apple, &api);
 
   pthread_join (client_thread, NULL);
 
@@ -1056,15 +1056,15 @@ main (void)
 }
 
 static void *
-frida_emulate_client (void * user_data)
+sunday_emulate_client (void * user_data)
 {
-  FridaTestState * state = user_data;
-  const FridaUploadApi * api = state->api;
+  SundayTestState * state = user_data;
+  const SundayUploadApi * api = state->api;
   struct sockaddr_in addr;
   int fd;
   int res;
   bool success;
-  const FridaUploadCommandType write_command_type = FRIDA_UPLOAD_COMMAND_WRITE;
+  const SundayUploadCommandType write_command_type = SUNDAY_UPLOAD_COMMAND_WRITE;
   uint64_t address;
   uint32_t size;
   uint8_t val_a[2], val_b;
@@ -1076,32 +1076,32 @@ frida_emulate_client (void * user_data)
   addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
   addr.sin_port = htons (state->port);
 
-  res = FRIDA_TEMP_FAILURE_RETRY (connect (fd, (const struct sockaddr *) &addr, sizeof (addr)));
+  res = SUNDAY_TEMP_FAILURE_RETRY (connect (fd, (const struct sockaddr *) &addr, sizeof (addr)));
   assert (res != -1);
 
-  #define FRIDA_WRITE_VALUE(v) \
-      success = frida_write_chunk (fd, &(v), sizeof (v), NULL, api); \
+  #define SUNDAY_WRITE_VALUE(v) \
+      success = sunday_write_chunk (fd, &(v), sizeof (v), NULL, api); \
       assert (success)
 
-  FRIDA_WRITE_VALUE (state->session_id_top);
-  FRIDA_WRITE_VALUE (state->session_id_bottom);
+  SUNDAY_WRITE_VALUE (state->session_id_top);
+  SUNDAY_WRITE_VALUE (state->session_id_bottom);
 
-  FRIDA_WRITE_VALUE (write_command_type);
+  SUNDAY_WRITE_VALUE (write_command_type);
   address = (uint64_t) &state->target_a;
-  FRIDA_WRITE_VALUE (address);
+  SUNDAY_WRITE_VALUE (address);
   size = 2;
-  FRIDA_WRITE_VALUE (size);
+  SUNDAY_WRITE_VALUE (size);
   val_a[0] = 1;
   val_a[1] = 2;
-  FRIDA_WRITE_VALUE (val_a);
+  SUNDAY_WRITE_VALUE (val_a);
 
-  FRIDA_WRITE_VALUE (write_command_type);
+  SUNDAY_WRITE_VALUE (write_command_type);
   address = (uint64_t) &state->target_b;
-  FRIDA_WRITE_VALUE (address);
+  SUNDAY_WRITE_VALUE (address);
   size = 1;
-  FRIDA_WRITE_VALUE (size);
+  SUNDAY_WRITE_VALUE (size);
   val_b = 5;
-  FRIDA_WRITE_VALUE (val_b);
+  SUNDAY_WRITE_VALUE (val_b);
 
   api->close (fd);
 

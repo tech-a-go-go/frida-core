@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class WindowsHelperProcess : Object, WindowsHelper {
 		public TemporaryDirectory tempdir {
 			get;
@@ -380,9 +380,9 @@ namespace Frida {
 
 		public ResourceStore (TemporaryDirectory tempdir) throws Error {
 #if HAVE_EMBEDDED_ASSETS
-			var helper_arm64 = add_helper ("arm64", Frida.Data.Helper.get_frida_helper_arm64_exe_blob (), tempdir);
-			var helper_x86_64 = add_helper ("x86_64", Frida.Data.Helper.get_frida_helper_x86_64_exe_blob (), tempdir);
-			var helper_x86 = add_helper ("x86", Frida.Data.Helper.get_frida_helper_x86_exe_blob (), tempdir);
+			var helper_arm64 = add_helper ("arm64", Sunday.Data.Helper.get_sunday_helper_arm64_exe_blob (), tempdir);
+			var helper_x86_64 = add_helper ("x86_64", Sunday.Data.Helper.get_sunday_helper_x86_64_exe_blob (), tempdir);
+			var helper_x86 = add_helper ("x86", Sunday.Data.Helper.get_sunday_helper_x86_exe_blob (), tempdir);
 
 			switch (Gum.Windows.query_native_cpu_type ()) {
 				case ARM64:
@@ -398,12 +398,12 @@ namespace Frida {
 					assert_not_reached ();
 			}
 #else
-			native_helper_path = Frida.helper_path;
+			native_helper_path = Sunday.helper_path;
 #endif
 		}
 
 #if HAVE_EMBEDDED_ASSETS
-		private TemporaryFile add_helper (string name, Frida.Data.Helper.Blob blob, TemporaryDirectory tempdir) throws Error {
+		private TemporaryFile add_helper (string name, Sunday.Data.Helper.Blob blob, TemporaryDirectory tempdir) throws Error {
 			var file = new TemporaryFile.from_stream (@"sunday-helper-$name.exe",
 				new MemoryInputStream.from_data (blob.data, null),
 				tempdir);

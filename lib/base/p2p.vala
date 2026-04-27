@@ -1,5 +1,5 @@
 #if HAVE_NICE
-namespace Frida {
+namespace Sunday {
 	namespace PeerConnection {
 		public async void configure_agent (Nice.Agent agent, uint stream_id, uint component_id, PeerOptions? options,
 				Cancellable? cancellable) throws Error, IOError {

@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class StdioPipes : Object {
 		public OutputStream? input {
 			get;

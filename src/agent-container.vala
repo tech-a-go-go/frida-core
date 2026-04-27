@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class AgentContainer : Object, AgentSessionProvider {
 		public DBusConnection connection {
 			get;
@@ -118,7 +118,7 @@ namespace Frida {
 
 #if LINUX
 			var s = LinuxInjectorState ();
-			s.frida_ctrlfd = -1;
+			s.sunday_ctrlfd = -1;
 			s.agent_ctrlfd = agent_ctrlfd_for_peer.steal ();
 			injector_state = &s;
 #endif

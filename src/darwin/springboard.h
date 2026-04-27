@@ -1,10 +1,10 @@
-#ifndef __FRIDA_DARWIN_SPRINGBOARD_H__
-#define __FRIDA_DARWIN_SPRINGBOARD_H__
+#ifndef __SUNDAY_DARWIN_SPRINGBOARD_H__
+#define __SUNDAY_DARWIN_SPRINGBOARD_H__
 
 #include <glib.h>
 #import <UIKit/UIKit.h>
 
-typedef struct _FridaSpringboardApi FridaSpringboardApi;
+typedef struct _SundaySpringboardApi SundaySpringboardApi;
 typedef void (^ FBSOpenResultCallback) (NSError * error);
 typedef enum _FBProcessKillReason FBProcessKillReason;
 
@@ -72,7 +72,7 @@ enum _FBProcessKillReason
 
 @end
 
-struct _FridaSpringboardApi
+struct _SundaySpringboardApi
 {
   void * sbs;
   void * fbs;
@@ -105,6 +105,6 @@ struct _FridaSpringboardApi
   id LSApplicationWorkspace;
 };
 
-G_GNUC_INTERNAL FridaSpringboardApi * _frida_get_springboard_api (void);
+G_GNUC_INTERNAL SundaySpringboardApi * _sunday_get_springboard_api (void);
 
 #endif

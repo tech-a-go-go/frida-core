@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	internal sealed class UsbNcmDriver : Object, AsyncInitable {
 		public UsbDevice device {
 			get;

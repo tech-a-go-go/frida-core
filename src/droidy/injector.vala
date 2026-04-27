@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaDroidyInjector", gir_version = "1.0")]
-namespace Frida.Droidy.Injector {
+[CCode (gir_namespace = "SundayDroidyInjector", gir_version = "1.0")]
+namespace Sunday.Droidy.Injector {
 	public static async GadgetDetails inject (InputStream gadget, string package, string device_serial, Cancellable? cancellable = null)
 			throws Error, IOError {
 		var session = new Session (gadget, package, device_serial);

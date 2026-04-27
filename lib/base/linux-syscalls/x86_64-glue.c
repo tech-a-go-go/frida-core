@@ -2,7 +2,7 @@
 
 #include "frida-base.h"
 
-static const FridaLinuxSyscallSignature frida_syscall_signatures[] =
+static const SundayLinuxSyscallSignature sunday_syscall_signatures[] =
 {
   { 0, "read", 3, { { "unsigned int", "fd" }, { "char *", "buf" }, { "size_t", "count" } } },
   { 1, "write", 3, { { "unsigned int", "fd" }, { "const char *", "buf" }, { "size_t", "count" } } },
@@ -376,7 +376,7 @@ static const FridaLinuxSyscallSignature frida_syscall_signatures[] =
   { 470, "listns", 4, { { "const struct ns_id_req *", "req" }, { "u64 *", "ns_ids" }, { "size_t", "nr_ns_ids" }, { "unsigned int", "flags" } } },
 };
 
-static const FridaLinuxSyscallSignature frida_compat32_syscall_signatures[] =
+static const SundayLinuxSyscallSignature sunday_compat32_syscall_signatures[] =
 {
   { 0, "restart_syscall", 0, {} },
   { 1, "exit", 1, { { "int", "error_code" } } },
@@ -816,18 +816,18 @@ static const FridaLinuxSyscallSignature frida_compat32_syscall_signatures[] =
   { 470, "listns", 4, { { "const struct ns_id_req *", "req" }, { "u64 *", "ns_ids" }, { "size_t", "nr_ns_ids" }, { "unsigned int", "flags" } } },
 };
 
-FridaLinuxSyscallSignature *
-frida_get_syscall_signatures (int * len)
+SundayLinuxSyscallSignature *
+sunday_get_syscall_signatures (int * len)
 {
   if (len != NULL)
-    *len = G_N_ELEMENTS (frida_syscall_signatures);
-  return (FridaLinuxSyscallSignature *) frida_syscall_signatures;
+    *len = G_N_ELEMENTS (sunday_syscall_signatures);
+  return (SundayLinuxSyscallSignature *) sunday_syscall_signatures;
 }
 
-FridaLinuxSyscallSignature *
-frida_get_compat32_syscall_signatures (int * len)
+SundayLinuxSyscallSignature *
+sunday_get_compat32_syscall_signatures (int * len)
 {
   if (len != NULL)
-    *len = G_N_ELEMENTS (frida_compat32_syscall_signatures);
-  return (FridaLinuxSyscallSignature *) frida_compat32_syscall_signatures;
+    *len = G_N_ELEMENTS (sunday_compat32_syscall_signatures);
+  return (SundayLinuxSyscallSignature *) sunday_compat32_syscall_signatures;
 }

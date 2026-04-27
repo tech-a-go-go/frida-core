@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class AndroidHelperClient : Object {
 		public AndroidHelperTransport transport {
 			get;

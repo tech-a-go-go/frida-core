@@ -1,2 +1,2 @@
 [resource-compiler]
-namespace = Frida.Data.Darwin
+namespace = Sunday.Data.Darwin

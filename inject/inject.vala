@@ -1,4 +1,4 @@
-namespace Frida.Inject {
+namespace Sunday.Inject {
 	private static Application application;
 
 	private static string? device_id;
@@ -661,7 +661,7 @@ namespace Frida.Inject {
 				try_reload.begin ();
 				return false;
 			});
-			source.attach (Frida.get_main_context ());
+			source.attach (Sunday.get_main_context ());
 
 			if (script_unchanged_timeout != null)
 				script_unchanged_timeout.destroy ();

@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	private sealed class UsbmuxTunnel : Object, Tunnel {
 		public signal void lost ();
 
@@ -245,7 +245,7 @@ namespace Frida.Fruity {
 
 		private void perform_usb_work () {
 			if (LibUSB.Context.init (out usb_context) != SUCCESS) {
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					usb_started.resolve (true);
 					usb_stopped.resolve (true);
 					return Source.REMOVE;
@@ -314,7 +314,7 @@ namespace Frida.Fruity {
 					refresh_polled_usb_devices ();
 			}
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				usb_stopped.resolve (true);
 				return Source.REMOVE;
 			});
@@ -343,14 +343,14 @@ namespace Frida.Fruity {
 				}
 			}
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				handle_usb_device_arrival.begin (device, counted_for_startup, id);
 				return Source.REMOVE;
 			});
 		}
 
 		private void on_usb_device_left (LibUSB.Device device) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				handle_usb_device_departure.begin (device);
 				return Source.REMOVE;
 			});
@@ -473,7 +473,7 @@ namespace Frida.Fruity {
 			if (!AtomicUint.compare_and_exchange (ref usb_started_resolved, 0, 1))
 				return;
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				usb_started.resolve (true);
 				return Source.REMOVE;
 			});
@@ -547,7 +547,7 @@ namespace Frida.Fruity {
 			}
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);

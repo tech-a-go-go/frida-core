@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaFruity", gir_version = "1.0")]
-namespace Frida.Fruity {
+[CCode (gir_namespace = "SundayFruity", gir_version = "1.0")]
+namespace Sunday.Fruity {
 	public sealed class OpackBuilder {
 		protected BufferBuilder builder = new BufferBuilder (LITTLE_ENDIAN);
 		private Gee.Deque<Scope> scopes = new Gee.ArrayQueue<Scope> ();

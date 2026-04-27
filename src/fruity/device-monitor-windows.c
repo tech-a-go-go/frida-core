@@ -7,52 +7,52 @@
 #include <setupapi.h>
 #include <windns.h>
 
-typedef struct _FridaPairingBrowserBackend FridaPairingBrowserBackend;
+typedef struct _SundayPairingBrowserBackend SundayPairingBrowserBackend;
 
-typedef struct _FridaMobileDeviceInfo FridaMobileDeviceInfo;
-typedef struct _FridaImageDeviceInfo FridaImageDeviceInfo;
+typedef struct _SundayMobileDeviceInfo SundayMobileDeviceInfo;
+typedef struct _SundayImageDeviceInfo SundayImageDeviceInfo;
 
-typedef struct _FridaFindMobileDeviceContext FridaFindMobileDeviceContext;
-typedef struct _FridaFindImageDeviceContext FridaFindImageDeviceContext;
+typedef struct _SundayFindMobileDeviceContext SundayFindMobileDeviceContext;
+typedef struct _SundayFindImageDeviceContext SundayFindImageDeviceContext;
 
-typedef struct _FridaDeviceInfo FridaDeviceInfo;
+typedef struct _SundayDeviceInfo SundayDeviceInfo;
 
-typedef struct _FridaDnsApi FridaDnsApi;
+typedef struct _SundayDnsApi SundayDnsApi;
 
-typedef gboolean (* FridaEnumerateDeviceFunc) (const FridaDeviceInfo * device_info, gpointer user_data);
+typedef gboolean (* SundayEnumerateDeviceFunc) (const SundayDeviceInfo * device_info, gpointer user_data);
 
-struct _FridaPairingBrowserBackend
+struct _SundayPairingBrowserBackend
 {
-  FridaFruityWindowsPairingBrowserResultCallback callback;
+  SundayFruityWindowsPairingBrowserResultCallback callback;
   gpointer callback_target;
 
   DNS_SERVICE_CANCEL browse_handle;
 };
 
-struct _FridaMobileDeviceInfo
+struct _SundayMobileDeviceInfo
 {
   WCHAR * location;
 };
 
-struct _FridaImageDeviceInfo
+struct _SundayImageDeviceInfo
 {
   WCHAR * friendly_name;
   WCHAR * icon_url;
 };
 
-struct _FridaFindMobileDeviceContext
+struct _SundayFindMobileDeviceContext
 {
   const WCHAR * udid;
-  FridaMobileDeviceInfo * mobile_device;
+  SundayMobileDeviceInfo * mobile_device;
 };
 
-struct _FridaFindImageDeviceContext
+struct _SundayFindImageDeviceContext
 {
   const WCHAR * location;
-  FridaImageDeviceInfo * image_device;
+  SundayImageDeviceInfo * image_device;
 };
 
-struct _FridaDeviceInfo
+struct _SundayDeviceInfo
 {
   WCHAR * device_path;
   WCHAR * instance_id;
@@ -63,46 +63,46 @@ struct _FridaDeviceInfo
   PSP_DEVINFO_DATA device_info_data;
 };
 
-struct _FridaDnsApi
+struct _SundayDnsApi
 {
   DNS_STATUS (WINAPI * browse) (DNS_SERVICE_BROWSE_REQUEST * request, DNS_SERVICE_CANCEL * cancel);
   DNS_STATUS (WINAPI * browse_cancel) (DNS_SERVICE_CANCEL * cancel_handle);
 };
 
-static void WINAPI frida_fruity_windows_pairing_browser_on_browse_results (void * query_context, DNS_QUERY_RESULT * query_results);
+static void WINAPI sunday_fruity_windows_pairing_browser_on_browse_results (void * query_context, DNS_QUERY_RESULT * query_results);
 
-static FridaMobileDeviceInfo * find_mobile_device_by_udid (const WCHAR * udid);
-static FridaImageDeviceInfo * find_image_device_by_location (const WCHAR * location);
+static SundayMobileDeviceInfo * find_mobile_device_by_udid (const WCHAR * udid);
+static SundayImageDeviceInfo * find_image_device_by_location (const WCHAR * location);
 
-static gboolean compare_udid_and_create_mobile_device_info_if_matching (const FridaDeviceInfo * device_info, gpointer user_data);
-static gboolean compare_location_and_create_image_device_info_if_matching (const FridaDeviceInfo * device_info, gpointer user_data);
+static gboolean compare_udid_and_create_mobile_device_info_if_matching (const SundayDeviceInfo * device_info, gpointer user_data);
+static gboolean compare_location_and_create_image_device_info_if_matching (const SundayDeviceInfo * device_info, gpointer user_data);
 
-FridaMobileDeviceInfo * frida_mobile_device_info_new (WCHAR * location);
-void frida_mobile_device_info_free (FridaMobileDeviceInfo * mdev);
+SundayMobileDeviceInfo * sunday_mobile_device_info_new (WCHAR * location);
+void sunday_mobile_device_info_free (SundayMobileDeviceInfo * mdev);
 
-FridaImageDeviceInfo * frida_image_device_info_new (WCHAR * friendly_name, WCHAR * icon_url);
-void frida_image_device_info_free (FridaImageDeviceInfo * idev);
+SundayImageDeviceInfo * sunday_image_device_info_new (WCHAR * friendly_name, WCHAR * icon_url);
+void sunday_image_device_info_free (SundayImageDeviceInfo * idev);
 
-static void frida_foreach_usb_device (const GUID * guid, FridaEnumerateDeviceFunc func, gpointer user_data);
+static void sunday_foreach_usb_device (const GUID * guid, SundayEnumerateDeviceFunc func, gpointer user_data);
 
-static WCHAR * frida_read_device_registry_string_property (HANDLE info_set, SP_DEVINFO_DATA * info_data, DWORD prop_id);
-static WCHAR * frida_read_registry_string (HKEY key, WCHAR * value_name);
-static WCHAR * frida_read_registry_multi_string (HKEY key, WCHAR * value_name);
-static gpointer frida_read_registry_value (HKEY key, WCHAR * value_name, DWORD expected_type);
+static WCHAR * sunday_read_device_registry_string_property (HANDLE info_set, SP_DEVINFO_DATA * info_data, DWORD prop_id);
+static WCHAR * sunday_read_registry_string (HKEY key, WCHAR * value_name);
+static WCHAR * sunday_read_registry_multi_string (HKEY key, WCHAR * value_name);
+static gpointer sunday_read_registry_value (HKEY key, WCHAR * value_name, DWORD expected_type);
 
-static FridaDnsApi * frida_try_get_dns_api (void);
+static SundayDnsApi * sunday_try_get_dns_api (void);
 
 static GUID GUID_APPLE_USB = { 0xF0B32BE3, 0x6678, 0x4879, { 0x92, 0x30, 0x0E4, 0x38, 0x45, 0xD8, 0x05, 0xEE } };
 
 void
-_frida_fruity_windows_pairing_browser_enumerate_network_interfaces (FridaFruityWindowsPairingBrowserNetifFoundFunc func,
+_sunday_fruity_windows_pairing_browser_enumerate_network_interfaces (SundayFruityWindowsPairingBrowserNetifFoundFunc func,
     gpointer func_target)
 {
   IP_ADAPTER_ADDRESSES * adapters;
   ULONG buffer_size, result;
   IP_ADAPTER_ADDRESSES_LH * adapter;
 
-  if (frida_try_get_dns_api () == NULL)
+  if (sunday_try_get_dns_api () == NULL)
     return;
 
   buffer_size = 32768;
@@ -141,30 +141,30 @@ beach:
 }
 
 void *
-_frida_fruity_windows_pairing_browser_monitor_create_backend (gulong interface_index,
-    FridaFruityWindowsPairingBrowserResultCallback callback, gpointer callback_target)
+_sunday_fruity_windows_pairing_browser_monitor_create_backend (gulong interface_index,
+    SundayFruityWindowsPairingBrowserResultCallback callback, gpointer callback_target)
 {
-  FridaPairingBrowserBackend * backend;
-  FridaDnsApi * api;
+  SundayPairingBrowserBackend * backend;
+  SundayDnsApi * api;
   DNS_SERVICE_BROWSE_REQUEST r = { 0, };
 
-  api = frida_try_get_dns_api ();
+  api = sunday_try_get_dns_api ();
   if (api == NULL)
     return NULL;
 
-  backend = g_slice_new0 (FridaPairingBrowserBackend);
+  backend = g_slice_new0 (SundayPairingBrowserBackend);
   backend->callback = callback;
   backend->callback_target = callback_target;
 
   r.Version = DNS_QUERY_REQUEST_VERSION2;
   r.InterfaceIndex = interface_index;
-  r.QueryName = G_PASTE (L, FRIDA_FRUITY_PAIRING_SERVICE_DNS_SD_NAME);
-  r.pBrowseCallbackV2 = frida_fruity_windows_pairing_browser_on_browse_results;
+  r.QueryName = G_PASTE (L, SUNDAY_FRUITY_PAIRING_SERVICE_DNS_SD_NAME);
+  r.pBrowseCallbackV2 = sunday_fruity_windows_pairing_browser_on_browse_results;
   r.pQueryContext = backend;
 
   if (api->browse (&r, &backend->browse_handle) != DNS_REQUEST_PENDING)
   {
-    g_slice_free (FridaPairingBrowserBackend, backend);
+    g_slice_free (SundayPairingBrowserBackend, backend);
     return NULL;
   }
 
@@ -172,36 +172,36 @@ _frida_fruity_windows_pairing_browser_monitor_create_backend (gulong interface_i
 }
 
 void
-_frida_fruity_windows_pairing_browser_monitor_destroy_backend (void * opaque_backend)
+_sunday_fruity_windows_pairing_browser_monitor_destroy_backend (void * opaque_backend)
 {
-  FridaPairingBrowserBackend * backend = opaque_backend;
+  SundayPairingBrowserBackend * backend = opaque_backend;
 
   if (backend == NULL)
     return;
 
-  frida_try_get_dns_api ()->browse_cancel (&backend->browse_handle);
+  sunday_try_get_dns_api ()->browse_cancel (&backend->browse_handle);
 
-  g_slice_free (FridaPairingBrowserBackend, backend);
+  g_slice_free (SundayPairingBrowserBackend, backend);
 }
 
 static void WINAPI
-frida_fruity_windows_pairing_browser_on_browse_results (void * query_context, DNS_QUERY_RESULT * query_results)
+sunday_fruity_windows_pairing_browser_on_browse_results (void * query_context, DNS_QUERY_RESULT * query_results)
 {
-  FridaPairingBrowserBackend * backend = query_context;
+  SundayPairingBrowserBackend * backend = query_context;
 
   backend->callback (query_results, backend->callback_target);
 }
 
 void
-_frida_fruity_usbmux_backend_extract_details_for_device (gint product_id, const char * udid, char ** name, GVariant ** icon,
+_sunday_fruity_usbmux_backend_extract_details_for_device (gint product_id, const char * udid, char ** name, GVariant ** icon,
     GError ** error)
 {
   gboolean result = FALSE;
   GString * udid_plain;
   const gchar * cursor;
   WCHAR * udid_utf16 = NULL;
-  FridaMobileDeviceInfo * mdev = NULL;
-  FridaImageDeviceInfo * idev = NULL;
+  SundayMobileDeviceInfo * mdev = NULL;
+  SundayImageDeviceInfo * idev = NULL;
   GVariant * idev_icon = NULL;
 
   udid_plain = g_string_sized_new (40);
@@ -221,7 +221,7 @@ _frida_fruity_usbmux_backend_extract_details_for_device (gint product_id, const 
   idev = find_image_device_by_location (mdev->location);
   if (idev != NULL)
   {
-    idev_icon = _frida_icon_from_resource_url (idev->icon_url, FRIDA_ICON_SMALL);
+    idev_icon = _sunday_icon_from_resource_url (idev->icon_url, SUNDAY_ICON_SMALL);
   }
 
   if (idev_icon != NULL)
@@ -241,47 +241,47 @@ beach:
   if (!result)
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_NOT_SUPPORTED,
         "Unable to extract details for device by UDID '%s'", udid);
   }
 
-  frida_image_device_info_free (idev);
-  frida_mobile_device_info_free (mdev);
+  sunday_image_device_info_free (idev);
+  sunday_mobile_device_info_free (mdev);
   g_free (udid_utf16);
   g_string_free (udid_plain, TRUE);
 }
 
-static FridaMobileDeviceInfo *
+static SundayMobileDeviceInfo *
 find_mobile_device_by_udid (const WCHAR * udid)
 {
-  FridaFindMobileDeviceContext ctx;
+  SundayFindMobileDeviceContext ctx;
 
   ctx.udid = udid;
   ctx.mobile_device = NULL;
 
-  frida_foreach_usb_device (&GUID_APPLE_USB, compare_udid_and_create_mobile_device_info_if_matching, &ctx);
+  sunday_foreach_usb_device (&GUID_APPLE_USB, compare_udid_and_create_mobile_device_info_if_matching, &ctx);
 
   return ctx.mobile_device;
 }
 
-static FridaImageDeviceInfo *
+static SundayImageDeviceInfo *
 find_image_device_by_location (const WCHAR * location)
 {
-  FridaFindImageDeviceContext ctx;
+  SundayFindImageDeviceContext ctx;
 
   ctx.location = location;
   ctx.image_device = NULL;
 
-  frida_foreach_usb_device (&GUID_DEVCLASS_IMAGE, compare_location_and_create_image_device_info_if_matching, &ctx);
+  sunday_foreach_usb_device (&GUID_DEVCLASS_IMAGE, compare_location_and_create_image_device_info_if_matching, &ctx);
 
   return ctx.image_device;
 }
 
 static gboolean
-compare_udid_and_create_mobile_device_info_if_matching (const FridaDeviceInfo * device_info, gpointer user_data)
+compare_udid_and_create_mobile_device_info_if_matching (const SundayDeviceInfo * device_info, gpointer user_data)
 {
-  FridaFindMobileDeviceContext * ctx = (FridaFindMobileDeviceContext *) user_data;
+  SundayFindMobileDeviceContext * ctx = (SundayFindMobileDeviceContext *) user_data;
   WCHAR * udid, * location;
   size_t udid_len;
 
@@ -310,7 +310,7 @@ try_device_path:
 
 match:
   location = (WCHAR *) g_memdup2 (device_info->location, ((guint) wcslen (device_info->location) + 1) * sizeof (WCHAR));
-  ctx->mobile_device = frida_mobile_device_info_new (location);
+  ctx->mobile_device = sunday_mobile_device_info_new (location);
 
   return FALSE;
 
@@ -319,9 +319,9 @@ keep_looking:
 }
 
 static gboolean
-compare_location_and_create_image_device_info_if_matching (const FridaDeviceInfo * device_info, gpointer user_data)
+compare_location_and_create_image_device_info_if_matching (const SundayDeviceInfo * device_info, gpointer user_data)
 {
-  FridaFindImageDeviceContext * ctx = (FridaFindImageDeviceContext *) user_data;
+  SundayFindImageDeviceContext * ctx = (SundayFindImageDeviceContext *) user_data;
   HKEY devkey = (HKEY) INVALID_HANDLE_VALUE;
   WCHAR * friendly_name = NULL;
   WCHAR * icon_url = NULL;
@@ -333,19 +333,19 @@ compare_location_and_create_image_device_info_if_matching (const FridaDeviceInfo
   if (devkey == INVALID_HANDLE_VALUE)
     goto keep_looking;
 
-  friendly_name = frida_read_registry_string (devkey, L"FriendlyName");
+  friendly_name = sunday_read_registry_string (devkey, L"FriendlyName");
   if (friendly_name == NULL)
   {
-    friendly_name = frida_read_registry_string (devkey, L"Label");
+    friendly_name = sunday_read_registry_string (devkey, L"Label");
     if (friendly_name == NULL)
       goto keep_looking;
   }
 
-  icon_url = frida_read_registry_multi_string (devkey, L"Icons");
+  icon_url = sunday_read_registry_multi_string (devkey, L"Icons");
   if (icon_url == NULL)
     goto keep_looking;
 
-  ctx->image_device = frida_image_device_info_new (friendly_name, icon_url);
+  ctx->image_device = sunday_image_device_info_new (friendly_name, icon_url);
 
   RegCloseKey (devkey);
   return FALSE;
@@ -358,19 +358,19 @@ keep_looking:
   return TRUE;
 }
 
-FridaMobileDeviceInfo *
-frida_mobile_device_info_new (WCHAR * location)
+SundayMobileDeviceInfo *
+sunday_mobile_device_info_new (WCHAR * location)
 {
-  FridaMobileDeviceInfo * mdev;
+  SundayMobileDeviceInfo * mdev;
 
-  mdev = g_new (FridaMobileDeviceInfo, 1);
+  mdev = g_new (SundayMobileDeviceInfo, 1);
   mdev->location = location;
 
   return mdev;
 }
 
 void
-frida_mobile_device_info_free (FridaMobileDeviceInfo * mdev)
+sunday_mobile_device_info_free (SundayMobileDeviceInfo * mdev)
 {
   if (mdev == NULL)
     return;
@@ -379,12 +379,12 @@ frida_mobile_device_info_free (FridaMobileDeviceInfo * mdev)
   g_free (mdev);
 }
 
-FridaImageDeviceInfo *
-frida_image_device_info_new (WCHAR * friendly_name, WCHAR * icon_url)
+SundayImageDeviceInfo *
+sunday_image_device_info_new (WCHAR * friendly_name, WCHAR * icon_url)
 {
-  FridaImageDeviceInfo * idev;
+  SundayImageDeviceInfo * idev;
 
-  idev = g_new (FridaImageDeviceInfo, 1);
+  idev = g_new (SundayImageDeviceInfo, 1);
   idev->friendly_name = friendly_name;
   idev->icon_url = icon_url;
 
@@ -392,7 +392,7 @@ frida_image_device_info_new (WCHAR * friendly_name, WCHAR * icon_url)
 }
 
 void
-frida_image_device_info_free (FridaImageDeviceInfo * idev)
+sunday_image_device_info_free (SundayImageDeviceInfo * idev)
 {
   if (idev == NULL)
     return;
@@ -403,7 +403,7 @@ frida_image_device_info_free (FridaImageDeviceInfo * idev)
 }
 
 static void
-frida_foreach_usb_device (const GUID * guid, FridaEnumerateDeviceFunc func, gpointer user_data)
+sunday_foreach_usb_device (const GUID * guid, SundayEnumerateDeviceFunc func, gpointer user_data)
 {
   HANDLE info_set;
   gboolean carry_on = TRUE;
@@ -420,7 +420,7 @@ frida_foreach_usb_device (const GUID * guid, FridaEnumerateDeviceFunc func, gpoi
     DWORD detail_size;
     SP_DEVICE_INTERFACE_DETAIL_DATA_W * detail_data = NULL;
     BOOL success;
-    FridaDeviceInfo device_info = { 0, };
+    SundayDeviceInfo device_info = { 0, };
     DWORD instance_id_size;
 
     iface_data.cbSize = sizeof (iface_data);
@@ -449,9 +449,9 @@ frida_foreach_usb_device (const GUID * guid, FridaEnumerateDeviceFunc func, gpoi
     if (!success)
       goto skip_device;
 
-    device_info.friendly_name = frida_read_device_registry_string_property (info_set, &info_data, SPDRP_FRIENDLYNAME);
+    device_info.friendly_name = sunday_read_device_registry_string_property (info_set, &info_data, SPDRP_FRIENDLYNAME);
 
-    device_info.location = frida_read_device_registry_string_property (info_set, &info_data, SPDRP_LOCATION_INFORMATION);
+    device_info.location = sunday_read_device_registry_string_property (info_set, &info_data, SPDRP_LOCATION_INFORMATION);
     if (device_info.location == NULL)
       goto skip_device;
 
@@ -474,7 +474,7 @@ beach:
 }
 
 static WCHAR *
-frida_read_device_registry_string_property (HANDLE info_set, SP_DEVINFO_DATA * info_data, DWORD prop_id)
+sunday_read_device_registry_string_property (HANDLE info_set, SP_DEVINFO_DATA * info_data, DWORD prop_id)
 {
   gboolean success = FALSE;
   WCHAR * value_buffer = NULL;
@@ -502,19 +502,19 @@ beach:
 }
 
 static WCHAR *
-frida_read_registry_string (HKEY key, WCHAR * value_name)
+sunday_read_registry_string (HKEY key, WCHAR * value_name)
 {
-  return (WCHAR *) frida_read_registry_value (key, value_name, REG_SZ);
+  return (WCHAR *) sunday_read_registry_value (key, value_name, REG_SZ);
 }
 
 static WCHAR *
-frida_read_registry_multi_string (HKEY key, WCHAR * value_name)
+sunday_read_registry_multi_string (HKEY key, WCHAR * value_name)
 {
-  return (WCHAR *) frida_read_registry_value (key, value_name, REG_MULTI_SZ);
+  return (WCHAR *) sunday_read_registry_value (key, value_name, REG_MULTI_SZ);
 }
 
 static gpointer
-frida_read_registry_value (HKEY key, WCHAR * value_name, DWORD expected_type)
+sunday_read_registry_value (HKEY key, WCHAR * value_name, DWORD expected_type)
 {
   gboolean success = FALSE;
   DWORD type;
@@ -549,8 +549,8 @@ beach:
   return buffer;
 }
 
-static FridaDnsApi *
-frida_try_get_dns_api (void)
+static SundayDnsApi *
+sunday_try_get_dns_api (void)
 {
   static gsize api_value = 0;
 
@@ -558,14 +558,14 @@ frida_try_get_dns_api (void)
   {
     HMODULE mod;
     FARPROC browse;
-    FridaDnsApi * api = NULL;
+    SundayDnsApi * api = NULL;
 
     mod = GetModuleHandleW (L"dnsapi.dll");
 
     browse = GetProcAddress (mod, "DnsServiceBrowse");
     if (browse != NULL)
     {
-      api = g_slice_new (FridaDnsApi);
+      api = g_slice_new (SundayDnsApi);
       api->browse = (gpointer) browse;
       api->browse_cancel = (gpointer) GetProcAddress (mod, "DnsServiceBrowseCancel");
     }

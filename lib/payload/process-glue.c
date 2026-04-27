@@ -14,7 +14,7 @@
 #endif
 
 guint
-frida_get_process_id (void)
+sunday_get_process_id (void)
 {
 #ifdef HAVE_WINDOWS
   return GetCurrentProcessId ();
@@ -24,7 +24,7 @@ frida_get_process_id (void)
 }
 
 gpointer
-frida_get_current_pthread (void)
+sunday_get_current_pthread (void)
 {
 #ifndef HAVE_WINDOWS
   return (gpointer) pthread_self ();
@@ -34,7 +34,7 @@ frida_get_current_pthread (void)
 }
 
 void
-frida_join_pthread (gpointer pthread)
+sunday_join_pthread (gpointer pthread)
 {
 #ifndef HAVE_WINDOWS
   pthread_join ((pthread_t) pthread, NULL);
@@ -42,7 +42,7 @@ frida_join_pthread (gpointer pthread)
 }
 
 void
-frida_kill_process (guint pid)
+sunday_kill_process (guint pid)
 {
 #ifdef HAVE_WINDOWS
   HANDLE process;
@@ -60,7 +60,7 @@ frida_kill_process (guint pid)
 }
 
 gchar *
-frida_try_get_executable_path (void)
+sunday_try_get_executable_path (void)
 {
 #ifdef HAVE_DARWIN
   uint32_t buf_size;

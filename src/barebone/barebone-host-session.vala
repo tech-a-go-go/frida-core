@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class BareboneHostSessionBackend : Object, HostSessionBackend {
 		private BareboneHostSessionProvider? provider;
 
@@ -41,7 +41,7 @@ namespace Frida {
 		private BareboneHostSession? host_session;
 
 		static construct {
-			_icon = make_provider_icon (Frida.Data.Icons.get_barebone_png_blob ().data);
+			_icon = make_provider_icon (Sunday.Data.Icons.get_barebone_png_blob ().data);
 		}
 
 		public async void close (Cancellable? cancellable) throws IOError {
@@ -57,7 +57,7 @@ namespace Frida {
 				throw new Error.INVALID_OPERATION ("Already created");
 
 			Barebone.Config config;
-			unowned string? config_path = Environment.get_variable ("FRIDA_BAREBONE_CONFIG");
+			unowned string? config_path = Environment.get_variable ("SUNDAY_BAREBONE_CONFIG");
 			if (config_path != null) {
 				try {
 					var config_data = yield FS.read_all_text (File.new_for_path (config_path), cancellable);
@@ -372,7 +372,7 @@ namespace Frida {
 				services: services,
 				id: id,
 				persist_timeout: persist_timeout,
-				frida_context: MainContext.ref_thread_default (),
+				sunday_context: MainContext.ref_thread_default (),
 				dbus_context: dbus_context
 			);
 		}
@@ -454,7 +454,7 @@ namespace Frida {
 				connection: connection,
 				id: id,
 				persist_timeout: persist_timeout,
-				frida_context: MainContext.ref_thread_default (),
+				sunday_context: MainContext.ref_thread_default (),
 				dbus_context: dbus_context
 			);
 		}
@@ -529,7 +529,7 @@ namespace Frida {
 			}
 		}
 
-		public MainContext frida_context {
+		public MainContext sunday_context {
 			get;
 			construct;
 		}
@@ -544,10 +544,10 @@ namespace Frida {
 		protected AgentMessageTransmitter transmitter;
 
 		construct {
-			assert (frida_context != null);
+			assert (sunday_context != null);
 			assert (dbus_context != null);
 
-			transmitter = new AgentMessageTransmitter (this, persist_timeout, frida_context, dbus_context);
+			transmitter = new AgentMessageTransmitter (this, persist_timeout, sunday_context, dbus_context);
 			transmitter.closed.connect (on_transmitter_closed);
 			transmitter.new_candidates.connect (on_transmitter_new_candidates);
 			transmitter.candidate_gathering_done.connect (on_transmitter_candidate_gathering_done);

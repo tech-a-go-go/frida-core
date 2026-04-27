@@ -1,5 +1,5 @@
-namespace Frida {
-	[DBus (name = "re.frida.HostSession17")]
+namespace Sunday {
+	[DBus (name = "re.sunday.HostSession17")]
 	public interface HostSession : Object {
 		public abstract async void ping (uint interval_seconds, Cancellable? cancellable) throws GLib.Error;
 
@@ -43,7 +43,7 @@ namespace Frida {
 		public signal void uninjected (InjectorPayloadId id);
 	}
 
-	[DBus (name = "re.frida.AgentSessionProvider17")]
+	[DBus (name = "re.sunday.AgentSessionProvider17")]
 	public interface AgentSessionProvider : Object {
 		public abstract async void open (AgentSessionId id, HashTable<string, Variant> options,
 			Cancellable? cancellable) throws GLib.Error;
@@ -58,7 +58,7 @@ namespace Frida {
 		public signal void child_gating_changed (uint subscriber_count);
 	}
 
-	[DBus (name = "re.frida.AgentSession17")]
+	[DBus (name = "re.sunday.AgentSession17")]
 	public interface AgentSession : Object {
 		public abstract async void close (Cancellable? cancellable) throws GLib.Error;
 
@@ -100,7 +100,7 @@ namespace Frida {
 		public signal void candidate_gathering_done ();
 	}
 
-	[DBus (name = "re.frida.AgentController17")]
+	[DBus (name = "re.sunday.AgentController17")]
 	public interface AgentController : Object {
 #if !WINDOWS
 		public abstract async HostChildId prepare_to_fork (uint parent_pid, Cancellable? cancellable, out uint parent_injectee_id,
@@ -121,7 +121,7 @@ namespace Frida {
 			Cancellable? cancellable) throws GLib.Error;
 	}
 
-	[DBus (name = "re.frida.AgentMessageSink17")]
+	[DBus (name = "re.sunday.AgentMessageSink17")]
 	public interface AgentMessageSink : Object {
 		public abstract async void post_messages (AgentMessage[] messages, uint batch_id,
 			Cancellable? cancellable) throws GLib.Error;
@@ -171,7 +171,7 @@ namespace Frida {
 			set;
 		}
 
-		public MainContext frida_context {
+		public MainContext sunday_context {
 			get;
 			construct;
 		}
@@ -209,18 +209,18 @@ namespace Frida {
 			INTERRUPTED
 		}
 
-		public AgentMessageTransmitter (AgentSession agent_session, uint persist_timeout, MainContext frida_context,
+		public AgentMessageTransmitter (AgentSession agent_session, uint persist_timeout, MainContext sunday_context,
 				MainContext dbus_context) {
 			Object (
 				agent_session: agent_session,
 				persist_timeout: persist_timeout,
-				frida_context: frida_context,
+				sunday_context: sunday_context,
 				dbus_context: dbus_context
 			);
 		}
 
 		construct {
-			assert (frida_context != null);
+			assert (sunday_context != null);
 			assert (dbus_context != null);
 		}
 
@@ -264,7 +264,7 @@ namespace Frida {
 				close.begin (null);
 				return false;
 			});
-			expiry_timer.attach (frida_context);
+			expiry_timer.attach (sunday_context);
 		}
 
 		public void resume (uint rx_batch_id, out uint tx_batch_id) throws Error {
@@ -284,7 +284,7 @@ namespace Frida {
 			delivery_cancellable = new Cancellable ();
 			state = LIVE;
 
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				maybe_deliver_pending_messages ();
 				return false;
 			});
@@ -355,7 +355,7 @@ namespace Frida {
 		}
 
 		private async void teardown_peer_connection_and_emit_closed () {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				if (nice_agent != null)
 					close_nice_resources_and_emit_closed.begin ();
 				else
@@ -388,7 +388,7 @@ namespace Frida {
 				schedule_on_dbus_thread (() => {
 					agent.close_async.begin ();
 
-					schedule_on_frida_thread (() => {
+					schedule_on_sunday_thread (() => {
 						close_nice_resources.callback ();
 						return false;
 					});
@@ -442,7 +442,7 @@ namespace Frida {
 							var stolen_candidates = pending_candidates;
 							pending_candidates = new Gee.ArrayList<string> ();
 
-							schedule_on_frida_thread (() => {
+							schedule_on_sunday_thread (() => {
 								int n = stolen_candidates.size;
 								var sdps = new string[n + 1];
 								for (int i = 0; i != n; i++)
@@ -460,7 +460,7 @@ namespace Frida {
 
 				gathering_handler = agent.candidate_gathering_done.connect (stream_id => {
 					schedule_on_dbus_thread (() => {
-						schedule_on_frida_thread (() => {
+						schedule_on_sunday_thread (() => {
 							candidate_gathering_done ();
 							return false;
 						});
@@ -487,12 +487,12 @@ namespace Frida {
 
 				nice_iostream = new SctpConnection (tc, offer.setup, offer.sctp_port, offer.max_message_size);
 
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					complete_peer_connection.begin ();
 					return false;
 				});
 			} catch (GLib.Error e) {
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					close_nice_resources.begin (false);
 					return false;
 				});
@@ -592,7 +592,7 @@ namespace Frida {
 		}
 
 		private async void teardown_peer_connection_and_emit_closed () {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				closed ();
 				return Source.REMOVE;
 			});
@@ -714,10 +714,10 @@ namespace Frida {
 			}
 		}
 
-		protected void schedule_on_frida_thread (owned SourceFunc function) {
+		protected void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
-			source.attach (frida_context);
+			source.attach (sunday_context);
 		}
 
 		protected void schedule_on_dbus_thread (owned SourceFunc function) {
@@ -749,7 +749,7 @@ namespace Frida {
 		}
 	}
 
-	[DBus (name = "re.frida.GadgetSession17")]
+	[DBus (name = "re.sunday.GadgetSession17")]
 	public interface GadgetSession : Object {
 		public abstract async void break_and_resume (Cancellable? cancellable) throws GLib.Error;
 		public abstract async void break_and_detach (Cancellable? cancellable) throws GLib.Error;
@@ -762,14 +762,14 @@ namespace Frida {
 		PAGE_PLAN,
 	}
 
-	[DBus (name = "re.frida.Channel17")]
+	[DBus (name = "re.sunday.Channel17")]
 	public interface Channel : Object {
 		public abstract async void close (Cancellable? cancellable) throws GLib.Error;
 		public abstract async void input (uint8[] data, Cancellable? cancellable) throws GLib.Error;
 		public signal void output (uint8[] data);
 	}
 
-	[DBus (name = "re.frida.ServiceSession17")]
+	[DBus (name = "re.sunday.ServiceSession17")]
 	public interface ServiceSession : Object {
 		public signal void close ();
 		public signal void message (Variant message);
@@ -779,13 +779,13 @@ namespace Frida {
 		public abstract async Variant request (Variant parameters, Cancellable? cancellable) throws GLib.Error;
 	}
 
-	[DBus (name = "re.frida.TransportBroker17")]
+	[DBus (name = "re.sunday.TransportBroker17")]
 	public interface TransportBroker : Object {
 		public abstract async void open_tcp_transport (AgentSessionId id, Cancellable? cancellable, out uint16 port,
 			out string token) throws GLib.Error;
 	}
 
-	[DBus (name = "re.frida.PortalSession17")]
+	[DBus (name = "re.sunday.PortalSession17")]
 	public interface PortalSession : Object {
 		public abstract async void join (HostApplicationInfo app, SpawnStartState current_state,
 			AgentSessionId[] interrupted_sessions, HashTable<string, Variant> options, Cancellable? cancellable,
@@ -794,14 +794,14 @@ namespace Frida {
 		public signal void kill ();
 	}
 
-	[DBus (name = "re.frida.BusSession17")]
+	[DBus (name = "re.sunday.BusSession17")]
 	public interface BusSession : Object {
 		public abstract async void attach (Cancellable? cancellable) throws GLib.Error;
 		public abstract async void post (string json, bool has_data, uint8[] data, Cancellable? cancellable) throws GLib.Error;
 		public signal void message (string json, bool has_data, uint8[] data);
 	}
 
-	[DBus (name = "re.frida.AuthenticationService17")]
+	[DBus (name = "re.sunday.AuthenticationService17")]
 	public interface AuthenticationService : Object {
 		public abstract async string authenticate (string token, Cancellable? cancellable) throws GLib.Error;
 	}
@@ -1020,7 +1020,7 @@ namespace Frida {
 
 #if LINUX
 	public struct LinuxInjectorState {
-		public int frida_ctrlfd;
+		public int sunday_ctrlfd;
 		public int agent_ctrlfd;
 	}
 #endif
@@ -1047,7 +1047,7 @@ namespace Frida {
 		}
 	}
 
-	[DBus (name = "re.frida.Error")]
+	[DBus (name = "re.sunday.Error")]
 	public errordomain Error {
 		SERVER_NOT_RUNNING,
 		EXECUTABLE_NOT_FOUND,
@@ -1065,9 +1065,9 @@ namespace Frida {
 	}
 
 	[NoReturn]
-	public static void throw_api_error (GLib.Error e) throws Frida.Error, IOError {
-		if (e is Frida.Error)
-			throw (Frida.Error) e;
+	public static void throw_api_error (GLib.Error e) throws Sunday.Error, IOError {
+		if (e is Sunday.Error)
+			throw (Sunday.Error) e;
 
 		if (e is IOError.CANCELLED)
 			throw (IOError) e;
@@ -1076,22 +1076,22 @@ namespace Frida {
 	}
 
 	[NoReturn]
-	public static void throw_dbus_error (GLib.Error e) throws Frida.Error, IOError {
+	public static void throw_dbus_error (GLib.Error e) throws Sunday.Error, IOError {
 		DBusError.strip_remote_error (e);
 
-		if (e is Frida.Error)
-			throw (Frida.Error) e;
+		if (e is Sunday.Error)
+			throw (Sunday.Error) e;
 
 		if (e is IOError.CANCELLED)
 			throw (IOError) e;
 
 		if (e is DBusError.UNKNOWN_METHOD) {
-			throw new Frida.Error.PROTOCOL ("Unable to communicate with remote frida-server; " +
+			throw new Sunday.Error.PROTOCOL ("Unable to communicate with remote frida-server; " +
 				"please ensure that major versions match and that the remote Frida has the " +
 				"feature you are trying to use");
 		}
 
-		throw new Frida.Error.TRANSPORT ("%s", e.message);
+		throw new Sunday.Error.TRANSPORT ("%s", e.message);
 	}
 
 	public struct HostApplicationInfo {

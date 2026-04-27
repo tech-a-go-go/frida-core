@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 
-namespace Frida {
+namespace Sunday {
 	public enum LinuxSyscall {
 		EXIT = 1,
 		FORK = 2,

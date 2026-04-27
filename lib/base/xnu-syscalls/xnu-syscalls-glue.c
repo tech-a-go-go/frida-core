@@ -2,7 +2,7 @@
 
 #include "frida-base.h"
 
-static const FridaXnuSyscallSignature frida_xnu_mach_traps[] =
+static const SundayXnuSyscallSignature sunday_xnu_mach_traps[] =
 {
   { -10, "mach_vm_allocate", 4, { { "mach_port_name_t", "target" }, { "mach_vm_offset_t *", "addr" }, { "mach_vm_size_t", "size" }, { "int", "flags" } } },
   { -11, "mach_vm_purgable_control", 4, { { "mach_port_name_t", "target" }, { "mach_vm_offset_t", "address" }, { "vm_purgable_t", "control" }, { "int *", "state" } } },
@@ -68,7 +68,7 @@ static const FridaXnuSyscallSignature frida_xnu_mach_traps[] =
   { -100, "iokit_user_client", 8, { { "void *", "userClientRef" }, { "uint32_t", "index" }, { "void *", "p1" }, { "void *", "p2" }, { "void *", "p3" }, { "void *", "p4" }, { "void *", "p5" }, { "void *", "p6" } } },
 };
 
-static const FridaXnuSyscallSignature frida_xnu_bsd_syscalls[] =
+static const SundayXnuSyscallSignature sunday_xnu_bsd_syscalls[] =
 {
   { 1, "exit", 1, { { "int", "rval" } } },
   { 2, "fork", 0, {} },
@@ -525,18 +525,18 @@ static const FridaXnuSyscallSignature frida_xnu_bsd_syscalls[] =
   { 557, "coalition_policy_get", 2, { { "uint64_t", "cid" }, { "uint32_t", "flavor" } } },
 };
 
-FridaXnuSyscallSignature *
-frida_get_xnu_mach_traps (int * len)
+SundayXnuSyscallSignature *
+sunday_get_xnu_mach_traps (int * len)
 {
   if (len != NULL)
-    *len = G_N_ELEMENTS (frida_xnu_mach_traps);
-  return (FridaXnuSyscallSignature *) frida_xnu_mach_traps;
+    *len = G_N_ELEMENTS (sunday_xnu_mach_traps);
+  return (SundayXnuSyscallSignature *) sunday_xnu_mach_traps;
 }
 
-FridaXnuSyscallSignature *
-frida_get_xnu_bsd_syscalls (int * len)
+SundayXnuSyscallSignature *
+sunday_get_xnu_bsd_syscalls (int * len)
 {
   if (len != NULL)
-    *len = G_N_ELEMENTS (frida_xnu_bsd_syscalls);
-  return (FridaXnuSyscallSignature *) frida_xnu_bsd_syscalls;
+    *len = G_N_ELEMENTS (sunday_xnu_bsd_syscalls);
+  return (SundayXnuSyscallSignature *) sunday_xnu_bsd_syscalls;
 }

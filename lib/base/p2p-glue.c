@@ -20,47 +20,47 @@
 #endif
 
 #ifdef HAVE_GIOAPPLE
-static SecKeyRef frida_rsa_keypair_generate (void);
-static void frida_rsa_export_public_key (SecKeyRef private_key, GByteArray * out);
-static void frida_rsa_export_private_key (SecKeyRef private_key, GByteArray * out);
-static void frida_rsa_sign_sha256 (SecKeyRef private_key, const guint8 * message, gsize message_length, GByteArray * out);
+static SecKeyRef sunday_rsa_keypair_generate (void);
+static void sunday_rsa_export_public_key (SecKeyRef private_key, GByteArray * out);
+static void sunday_rsa_export_private_key (SecKeyRef private_key, GByteArray * out);
+static void sunday_rsa_sign_sha256 (SecKeyRef private_key, const guint8 * message, gsize message_length, GByteArray * out);
 
-static void frida_build_tbs_certificate (GByteArray * out, const GByteArray * subject_public_key);
-static void frida_build_name (GByteArray * out);
-static void frida_build_rdn (GByteArray * out, const guint8 * oid, gsize oid_length, guint8 value_tag, const gchar * value);
-static void frida_build_validity (GByteArray * out);
-static void frida_build_subject_public_key_info (GByteArray * out, const GByteArray * rsa_public_key);
-static void frida_build_signed_certificate (GByteArray * out, const GByteArray * tbs, const GByteArray * signature);
-static void frida_build_algorithm_identifier (GByteArray * out, const guint8 * oid, gsize oid_length);
-static void frida_build_pkcs8_private_key_info (GByteArray * out, const GByteArray * rsa_private_key);
-static gchar * frida_pem_encode (const gchar * type, const guint8 * der, gsize der_length);
+static void sunday_build_tbs_certificate (GByteArray * out, const GByteArray * subject_public_key);
+static void sunday_build_name (GByteArray * out);
+static void sunday_build_rdn (GByteArray * out, const guint8 * oid, gsize oid_length, guint8 value_tag, const gchar * value);
+static void sunday_build_validity (GByteArray * out);
+static void sunday_build_subject_public_key_info (GByteArray * out, const GByteArray * rsa_public_key);
+static void sunday_build_signed_certificate (GByteArray * out, const GByteArray * tbs, const GByteArray * signature);
+static void sunday_build_algorithm_identifier (GByteArray * out, const guint8 * oid, gsize oid_length);
+static void sunday_build_pkcs8_private_key_info (GByteArray * out, const GByteArray * rsa_private_key);
+static gchar * sunday_pem_encode (const gchar * type, const guint8 * der, gsize der_length);
 
-static void frida_der_append_tlv (GByteArray * out, guint8 tag, const guint8 * value, gsize length);
-static void frida_der_append_length (GByteArray * out, gsize length);
-static void frida_der_append_integer_uint (GByteArray * out, guint64 value);
-static void frida_der_append_null (GByteArray * out);
-static void frida_der_append_oid (GByteArray * out, const guint8 * oid, gsize length);
-static void frida_der_append_utctime (GByteArray * out, time_t t);
-static void frida_der_append_bit_string (GByteArray * out, const guint8 * bytes, gsize length);
+static void sunday_der_append_tlv (GByteArray * out, guint8 tag, const guint8 * value, gsize length);
+static void sunday_der_append_length (GByteArray * out, gsize length);
+static void sunday_der_append_integer_uint (GByteArray * out, guint64 value);
+static void sunday_der_append_null (GByteArray * out);
+static void sunday_der_append_oid (GByteArray * out, const guint8 * oid, gsize length);
+static void sunday_der_append_utctime (GByteArray * out, time_t t);
+static void sunday_der_append_bit_string (GByteArray * out, const guint8 * bytes, gsize length);
 
-static const guint8 frida_oid_country[] = { 0x55, 0x04, 0x06 };
-static const guint8 frida_oid_organization[] = { 0x55, 0x04, 0x0a };
-static const guint8 frida_oid_common_name[] = { 0x55, 0x04, 0x03 };
-static const guint8 frida_oid_rsa_encryption[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01 };
-static const guint8 frida_oid_sha256_with_rsa[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b };
+static const guint8 sunday_oid_country[] = { 0x55, 0x04, 0x06 };
+static const guint8 sunday_oid_organization[] = { 0x55, 0x04, 0x0a };
+static const guint8 sunday_oid_common_name[] = { 0x55, 0x04, 0x03 };
+static const guint8 sunday_oid_rsa_encryption[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01 };
+static const guint8 sunday_oid_sha256_with_rsa[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b };
 #else
-static gchar * frida_steal_bio_to_string (BIO ** bio);
+static gchar * sunday_steal_bio_to_string (BIO ** bio);
 #endif
 
-static int frida_on_connection_output (void * addr, void * buffer, size_t length, uint8_t tos, uint8_t set_df);
-static void frida_on_debug_printf (const char * format, ...);
+static int sunday_on_connection_output (void * addr, void * buffer, size_t length, uint8_t tos, uint8_t set_df);
+static void sunday_on_debug_printf (const char * format, ...);
 
-static void frida_on_upcall (struct socket * sock, void * user_data, int flags);
+static void sunday_on_upcall (struct socket * sock, void * user_data, int flags);
 
 #ifdef HAVE_GIOAPPLE
 
 void
-_frida_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar ** cert_pem, gchar ** key_pem)
+_sunday_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar ** cert_pem, gchar ** key_pem)
 {
   SecKeyRef private_key;
   GByteArray * rsa_public_key, * rsa_private_key, * subject_public_key, * tbs, * signature, * certificate, * pkcs8;
@@ -70,33 +70,33 @@ _frida_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar *
   *cert_pem = NULL;
   *key_pem = NULL;
 
-  private_key = frida_rsa_keypair_generate ();
+  private_key = sunday_rsa_keypair_generate ();
 
   rsa_public_key = g_byte_array_new ();
-  frida_rsa_export_public_key (private_key, rsa_public_key);
+  sunday_rsa_export_public_key (private_key, rsa_public_key);
 
   rsa_private_key = g_byte_array_new ();
-  frida_rsa_export_private_key (private_key, rsa_private_key);
+  sunday_rsa_export_private_key (private_key, rsa_private_key);
 
   subject_public_key = g_byte_array_new ();
-  frida_build_subject_public_key_info (subject_public_key, rsa_public_key);
+  sunday_build_subject_public_key_info (subject_public_key, rsa_public_key);
 
   tbs = g_byte_array_new ();
-  frida_build_tbs_certificate (tbs, subject_public_key);
+  sunday_build_tbs_certificate (tbs, subject_public_key);
 
   signature = g_byte_array_new ();
-  frida_rsa_sign_sha256 (private_key, tbs->data, tbs->len, signature);
+  sunday_rsa_sign_sha256 (private_key, tbs->data, tbs->len, signature);
 
   certificate = g_byte_array_new ();
-  frida_build_signed_certificate (certificate, tbs, signature);
+  sunday_build_signed_certificate (certificate, tbs, signature);
 
   pkcs8 = g_byte_array_new ();
-  frida_build_pkcs8_private_key_info (pkcs8, rsa_private_key);
+  sunday_build_pkcs8_private_key_info (pkcs8, rsa_private_key);
 
   *cert_der = g_memdup2 (certificate->data, certificate->len);
   *cert_der_length = certificate->len;
-  *cert_pem = frida_pem_encode ("CERTIFICATE", certificate->data, certificate->len);
-  *key_pem = frida_pem_encode ("PRIVATE KEY", pkcs8->data, pkcs8->len);
+  *cert_pem = sunday_pem_encode ("CERTIFICATE", certificate->data, certificate->len);
+  *key_pem = sunday_pem_encode ("PRIVATE KEY", pkcs8->data, pkcs8->len);
 
   g_byte_array_unref (pkcs8);
   g_byte_array_unref (certificate);
@@ -109,7 +109,7 @@ _frida_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar *
 }
 
 static SecKeyRef
-frida_rsa_keypair_generate (void)
+sunday_rsa_keypair_generate (void)
 {
   SecKeyRef private_key;
   CFMutableDictionaryRef attrs;
@@ -132,7 +132,7 @@ frida_rsa_keypair_generate (void)
 }
 
 static void
-frida_rsa_export_public_key (SecKeyRef private_key, GByteArray * out)
+sunday_rsa_export_public_key (SecKeyRef private_key, GByteArray * out)
 {
   SecKeyRef public_key;
   CFDataRef data;
@@ -150,7 +150,7 @@ frida_rsa_export_public_key (SecKeyRef private_key, GByteArray * out)
 }
 
 static void
-frida_rsa_export_private_key (SecKeyRef private_key, GByteArray * out)
+sunday_rsa_export_private_key (SecKeyRef private_key, GByteArray * out)
 {
   CFDataRef data;
 
@@ -163,7 +163,7 @@ frida_rsa_export_private_key (SecKeyRef private_key, GByteArray * out)
 }
 
 static void
-frida_rsa_sign_sha256 (SecKeyRef private_key, const guint8 * message, gsize message_length, GByteArray * out)
+sunday_rsa_sign_sha256 (SecKeyRef private_key, const guint8 * message, gsize message_length, GByteArray * out)
 {
   CFDataRef to_sign, signature;
 
@@ -179,55 +179,55 @@ frida_rsa_sign_sha256 (SecKeyRef private_key, const guint8 * message, gsize mess
 }
 
 static void
-frida_build_tbs_certificate (GByteArray * out, const GByteArray * subject_public_key)
+sunday_build_tbs_certificate (GByteArray * out, const GByteArray * subject_public_key)
 {
   GByteArray * inner = g_byte_array_new ();
 
-  frida_der_append_integer_uint (inner, 1);
-  frida_build_algorithm_identifier (inner, frida_oid_sha256_with_rsa, sizeof (frida_oid_sha256_with_rsa));
-  frida_build_name (inner);
-  frida_build_validity (inner);
-  frida_build_name (inner);
+  sunday_der_append_integer_uint (inner, 1);
+  sunday_build_algorithm_identifier (inner, sunday_oid_sha256_with_rsa, sizeof (sunday_oid_sha256_with_rsa));
+  sunday_build_name (inner);
+  sunday_build_validity (inner);
+  sunday_build_name (inner);
   g_byte_array_append (inner, subject_public_key->data, subject_public_key->len);
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static void
-frida_build_name (GByteArray * out)
+sunday_build_name (GByteArray * out)
 {
   GByteArray * inner = g_byte_array_new ();
 
-  frida_build_rdn (inner, frida_oid_country, sizeof (frida_oid_country), 0x13, "CA");
-  frida_build_rdn (inner, frida_oid_organization, sizeof (frida_oid_organization), 0x0c, "Frida");
-  frida_build_rdn (inner, frida_oid_common_name, sizeof (frida_oid_common_name), 0x0c, "lolcathost");
+  sunday_build_rdn (inner, sunday_oid_country, sizeof (sunday_oid_country), 0x13, "CA");
+  sunday_build_rdn (inner, sunday_oid_organization, sizeof (sunday_oid_organization), 0x0c, "Frida");
+  sunday_build_rdn (inner, sunday_oid_common_name, sizeof (sunday_oid_common_name), 0x0c, "lolcathost");
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static void
-frida_build_rdn (GByteArray * out, const guint8 * oid, gsize oid_length, guint8 value_tag, const gchar * value)
+sunday_build_rdn (GByteArray * out, const guint8 * oid, gsize oid_length, guint8 value_tag, const gchar * value)
 {
   GByteArray * atv, * rdn;
 
   atv = g_byte_array_new ();
   rdn = g_byte_array_new ();
 
-  frida_der_append_oid (atv, oid, oid_length);
-  frida_der_append_tlv (atv, value_tag, (const guint8 *) value, strlen (value));
-  frida_der_append_tlv (rdn, 0x30, atv->data, atv->len);
-  frida_der_append_tlv (out, 0x31, rdn->data, rdn->len);
+  sunday_der_append_oid (atv, oid, oid_length);
+  sunday_der_append_tlv (atv, value_tag, (const guint8 *) value, strlen (value));
+  sunday_der_append_tlv (rdn, 0x30, atv->data, atv->len);
+  sunday_der_append_tlv (out, 0x31, rdn->data, rdn->len);
 
   g_byte_array_unref (rdn);
   g_byte_array_unref (atv);
 }
 
 static void
-frida_build_validity (GByteArray * out)
+sunday_build_validity (GByteArray * out)
 {
   const time_t lifetime_seconds = 15780000;
   GByteArray * inner;
@@ -238,70 +238,70 @@ frida_build_validity (GByteArray * out)
   not_before = time (NULL);
   not_after = not_before + lifetime_seconds;
 
-  frida_der_append_utctime (inner, not_before);
-  frida_der_append_utctime (inner, not_after);
+  sunday_der_append_utctime (inner, not_before);
+  sunday_der_append_utctime (inner, not_after);
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static void
-frida_build_subject_public_key_info (GByteArray * out, const GByteArray * rsa_public_key)
+sunday_build_subject_public_key_info (GByteArray * out, const GByteArray * rsa_public_key)
 {
   GByteArray * inner = g_byte_array_new ();
 
-  frida_build_algorithm_identifier (inner, frida_oid_rsa_encryption, sizeof (frida_oid_rsa_encryption));
-  frida_der_append_bit_string (inner, rsa_public_key->data, rsa_public_key->len);
+  sunday_build_algorithm_identifier (inner, sunday_oid_rsa_encryption, sizeof (sunday_oid_rsa_encryption));
+  sunday_der_append_bit_string (inner, rsa_public_key->data, rsa_public_key->len);
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static void
-frida_build_signed_certificate (GByteArray * out, const GByteArray * tbs, const GByteArray * signature)
+sunday_build_signed_certificate (GByteArray * out, const GByteArray * tbs, const GByteArray * signature)
 {
   GByteArray * inner = g_byte_array_new ();
 
   g_byte_array_append (inner, tbs->data, tbs->len);
-  frida_build_algorithm_identifier (inner, frida_oid_sha256_with_rsa, sizeof (frida_oid_sha256_with_rsa));
-  frida_der_append_bit_string (inner, signature->data, signature->len);
+  sunday_build_algorithm_identifier (inner, sunday_oid_sha256_with_rsa, sizeof (sunday_oid_sha256_with_rsa));
+  sunday_der_append_bit_string (inner, signature->data, signature->len);
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
-
-  g_byte_array_unref (inner);
-}
-
-static void
-frida_build_algorithm_identifier (GByteArray * out, const guint8 * oid, gsize oid_length)
-{
-  GByteArray * inner = g_byte_array_new ();
-
-  frida_der_append_oid (inner, oid, oid_length);
-  frida_der_append_null (inner);
-
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static void
-frida_build_pkcs8_private_key_info (GByteArray * out, const GByteArray * rsa_private_key)
+sunday_build_algorithm_identifier (GByteArray * out, const guint8 * oid, gsize oid_length)
 {
   GByteArray * inner = g_byte_array_new ();
 
-  frida_der_append_integer_uint (inner, 0);
-  frida_build_algorithm_identifier (inner, frida_oid_rsa_encryption, sizeof (frida_oid_rsa_encryption));
-  frida_der_append_tlv (inner, 0x04, rsa_private_key->data, rsa_private_key->len);
+  sunday_der_append_oid (inner, oid, oid_length);
+  sunday_der_append_null (inner);
 
-  frida_der_append_tlv (out, 0x30, inner->data, inner->len);
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
+
+  g_byte_array_unref (inner);
+}
+
+static void
+sunday_build_pkcs8_private_key_info (GByteArray * out, const GByteArray * rsa_private_key)
+{
+  GByteArray * inner = g_byte_array_new ();
+
+  sunday_der_append_integer_uint (inner, 0);
+  sunday_build_algorithm_identifier (inner, sunday_oid_rsa_encryption, sizeof (sunday_oid_rsa_encryption));
+  sunday_der_append_tlv (inner, 0x04, rsa_private_key->data, rsa_private_key->len);
+
+  sunday_der_append_tlv (out, 0x30, inner->data, inner->len);
 
   g_byte_array_unref (inner);
 }
 
 static gchar *
-frida_pem_encode (const gchar * type, const guint8 * der, gsize der_length)
+sunday_pem_encode (const gchar * type, const guint8 * der, gsize der_length)
 {
   GString * pem;
   gchar * base64;
@@ -329,16 +329,16 @@ frida_pem_encode (const gchar * type, const guint8 * der, gsize der_length)
 }
 
 static void
-frida_der_append_tlv (GByteArray * out, guint8 tag, const guint8 * value, gsize length)
+sunday_der_append_tlv (GByteArray * out, guint8 tag, const guint8 * value, gsize length)
 {
   g_byte_array_append (out, &tag, 1);
-  frida_der_append_length (out, length);
+  sunday_der_append_length (out, length);
   if (length > 0)
     g_byte_array_append (out, value, length);
 }
 
 static void
-frida_der_append_length (GByteArray * out, gsize length)
+sunday_der_append_length (GByteArray * out, gsize length)
 {
   gint i;
   guint8 buf[9], header;
@@ -366,7 +366,7 @@ frida_der_append_length (GByteArray * out, gsize length)
 }
 
 static void
-frida_der_append_integer_uint (GByteArray * out, guint64 value)
+sunday_der_append_integer_uint (GByteArray * out, guint64 value)
 {
   gint i;
   guint8 buf[9];
@@ -383,23 +383,23 @@ frida_der_append_integer_uint (GByteArray * out, guint64 value)
   while (start < 8 && buf[start] == 0 && (buf[start + 1] & 0x80) == 0)
     start++;
 
-  frida_der_append_tlv (out, 0x02, buf + start, (gsize) (9 - start));
+  sunday_der_append_tlv (out, 0x02, buf + start, (gsize) (9 - start));
 }
 
 static void
-frida_der_append_null (GByteArray * out)
+sunday_der_append_null (GByteArray * out)
 {
-  frida_der_append_tlv (out, 0x05, NULL, 0);
+  sunday_der_append_tlv (out, 0x05, NULL, 0);
 }
 
 static void
-frida_der_append_oid (GByteArray * out, const guint8 * oid, gsize length)
+sunday_der_append_oid (GByteArray * out, const guint8 * oid, gsize length)
 {
-  frida_der_append_tlv (out, 0x06, oid, length);
+  sunday_der_append_tlv (out, 0x06, oid, length);
 }
 
 static void
-frida_der_append_utctime (GByteArray * out, time_t t)
+sunday_der_append_utctime (GByteArray * out, time_t t)
 {
   struct tm tm;
   gchar buf[16];
@@ -409,17 +409,17 @@ frida_der_append_utctime (GByteArray * out, time_t t)
       tm.tm_year % 100, tm.tm_mon + 1, tm.tm_mday,
       tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  frida_der_append_tlv (out, 0x17, (const guint8 *) buf, strlen (buf));
+  sunday_der_append_tlv (out, 0x17, (const guint8 *) buf, strlen (buf));
 }
 
 static void
-frida_der_append_bit_string (GByteArray * out, const guint8 * bytes, gsize length)
+sunday_der_append_bit_string (GByteArray * out, const guint8 * bytes, gsize length)
 {
   guint8 tag = 0x03;
   guint8 unused_bits = 0;
 
   g_byte_array_append (out, &tag, 1);
-  frida_der_append_length (out, length + 1);
+  sunday_der_append_length (out, length + 1);
   g_byte_array_append (out, &unused_bits, 1);
   if (length > 0)
     g_byte_array_append (out, bytes, length);
@@ -428,7 +428,7 @@ frida_der_append_bit_string (GByteArray * out, const guint8 * bytes, gsize lengt
 #else
 
 void
-_frida_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar ** cert_pem, gchar ** key_pem)
+_sunday_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar ** cert_pem, gchar ** key_pem)
 {
   X509 * x509;
   X509_NAME * name;
@@ -471,18 +471,18 @@ _frida_generate_certificate (guint8 ** cert_der, gint * cert_der_length, gchar *
 
   bio = BIO_new (BIO_s_mem ());
   PEM_write_bio_X509 (bio, x509);
-  *cert_pem = frida_steal_bio_to_string (&bio);
+  *cert_pem = sunday_steal_bio_to_string (&bio);
 
   bio = BIO_new (BIO_s_mem ());
   PEM_write_bio_PrivateKey (bio, pkey, NULL, NULL, 0, NULL, NULL);
-  *key_pem = frida_steal_bio_to_string (&bio);
+  *key_pem = sunday_steal_bio_to_string (&bio);
 
   EVP_PKEY_free (pkey);
   X509_free (x509);
 }
 
 static gchar *
-frida_steal_bio_to_string (BIO ** bio)
+sunday_steal_bio_to_string (BIO ** bio)
 {
   gchar * result;
   long n;
@@ -499,11 +499,11 @@ frida_steal_bio_to_string (BIO ** bio)
 #endif
 
 void
-_frida_sctp_connection_initialize_sctp_backend (void)
+_sunday_sctp_connection_initialize_sctp_backend (void)
 {
   const int msec_per_sec = 1000;
 
-  usrsctp_init_nothreads (0, frida_on_connection_output, frida_on_debug_printf);
+  usrsctp_init_nothreads (0, sunday_on_connection_output, sunday_on_debug_printf);
 
   usrsctp_sysctl_set_sctp_sendspace (256 * 1024);
   usrsctp_sysctl_set_sctp_recvspace (256 * 1024);
@@ -536,23 +536,23 @@ _frida_sctp_connection_initialize_sctp_backend (void)
 }
 
 static int
-frida_on_connection_output (void * addr, void * buffer, size_t length, uint8_t tos, uint8_t set_df)
+sunday_on_connection_output (void * addr, void * buffer, size_t length, uint8_t tos, uint8_t set_df)
 {
-  FridaSctpConnection * connection = addr;
+  SundaySctpConnection * connection = addr;
 
-  _frida_sctp_connection_emit_transport_packet (connection, buffer, (gint) length);
+  _sunday_sctp_connection_emit_transport_packet (connection, buffer, (gint) length);
 
   return 0;
 }
 
 static void
-frida_on_debug_printf (const char * format, ...)
+sunday_on_debug_printf (const char * format, ...)
 {
   g_printerr ("[SCTP] %s\n", format);
 }
 
 void *
-_frida_sctp_connection_create_sctp_socket (FridaSctpConnection * self)
+_sunday_sctp_connection_create_sctp_socket (SundaySctpConnection * self)
 {
   struct socket * sock;
   struct linger linger;
@@ -576,7 +576,7 @@ _frida_sctp_connection_create_sctp_socket (FridaSctpConnection * self)
   usrsctp_register_address (self);
 
   sock = usrsctp_socket (AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL);
-  usrsctp_set_upcall (sock, frida_on_upcall, self);
+  usrsctp_set_upcall (sock, sunday_on_upcall, self);
   usrsctp_set_non_blocking (sock, TRUE);
 
   linger.l_onoff = TRUE;
@@ -605,7 +605,7 @@ _frida_sctp_connection_create_sctp_socket (FridaSctpConnection * self)
 }
 
 void
-_frida_sctp_connection_connect_sctp_socket (FridaSctpConnection * self, void * sock, guint16 port)
+_sunday_sctp_connection_connect_sctp_socket (SundaySctpConnection * self, void * sock, guint16 port)
 {
   struct sockaddr_conn addr;
 
@@ -622,21 +622,21 @@ _frida_sctp_connection_connect_sctp_socket (FridaSctpConnection * self, void * s
 }
 
 static void
-frida_on_upcall (struct socket * sock, void * user_data, int flags)
+sunday_on_upcall (struct socket * sock, void * user_data, int flags)
 {
-  FridaSctpConnection * connection = user_data;
+  SundaySctpConnection * connection = user_data;
 
-  _frida_sctp_connection_on_sctp_socket_events_changed (connection);
+  _sunday_sctp_connection_on_sctp_socket_events_changed (connection);
 }
 
 void
-_frida_sctp_connection_close (void * sock)
+_sunday_sctp_connection_close (void * sock)
 {
   usrsctp_close (sock);
 }
 
 void
-_frida_sctp_connection_shutdown (void * sock, FridaSctpShutdownType type, GError ** error)
+_sunday_sctp_connection_shutdown (void * sock, SundaySctpShutdownType type, GError ** error)
 {
   if (usrsctp_shutdown (sock, type) == -1)
   {
@@ -645,7 +645,7 @@ _frida_sctp_connection_shutdown (void * sock, FridaSctpShutdownType type, GError
 }
 
 GIOCondition
-_frida_sctp_connection_query_sctp_socket_events (void * sock)
+_sunday_sctp_connection_query_sctp_socket_events (void * sock)
 {
   GIOCondition condition = 0;
   int events;
@@ -665,14 +665,14 @@ _frida_sctp_connection_query_sctp_socket_events (void * sock)
 }
 
 void
-_frida_sctp_connection_handle_transport_packet (FridaSctpConnection * self, guint8 * data, gint data_length)
+_sunday_sctp_connection_handle_transport_packet (SundaySctpConnection * self, guint8 * data, gint data_length)
 {
   usrsctp_conninput (self, data, data_length, 0);
 }
 
 gssize
-_frida_sctp_connection_recv (void * sock, guint8 * buffer, gint buffer_length, guint16 * stream_id, FridaPayloadProtocolId * protocol_id,
-    FridaSctpMessageFlags * message_flags, GError ** error)
+_sunday_sctp_connection_recv (void * sock, guint8 * buffer, gint buffer_length, guint16 * stream_id, SundayPayloadProtocolId * protocol_id,
+    SundaySctpMessageFlags * message_flags, GError ** error)
 {
   gssize n;
   struct sockaddr_conn from;
@@ -699,16 +699,16 @@ _frida_sctp_connection_recv (void * sock, guint8 * buffer, gint buffer_length, g
   else
   {
     *stream_id = 0;
-    *protocol_id = FRIDA_PAYLOAD_PROTOCOL_ID_NONE;
+    *protocol_id = SUNDAY_PAYLOAD_PROTOCOL_ID_NONE;
   }
 
   *message_flags = 0;
 
   if ((msg_flags & MSG_EOR) != 0)
-    *message_flags |= FRIDA_SCTP_MESSAGE_FLAGS_END_OF_RECORD;
+    *message_flags |= SUNDAY_SCTP_MESSAGE_FLAGS_END_OF_RECORD;
 
   if ((msg_flags & MSG_NOTIFICATION) != 0)
-    *message_flags |= FRIDA_SCTP_MESSAGE_FLAGS_NOTIFICATION;
+    *message_flags |= SUNDAY_SCTP_MESSAGE_FLAGS_NOTIFICATION;
 
   return n;
 
@@ -720,7 +720,7 @@ propagate_usrsctp_error:
 }
 
 gssize
-_frida_sctp_connection_send (void * sock, guint16 stream_id, FridaPayloadProtocolId protocol_id, guint8 * data, gint data_length,
+_sunday_sctp_connection_send (void * sock, guint16 stream_id, SundayPayloadProtocolId protocol_id, guint8 * data, gint data_length,
       GError ** error)
 {
   gssize n;
@@ -750,13 +750,13 @@ propagate_usrsctp_error:
 }
 
 gint
-_frida_sctp_timer_source_get_timeout (void)
+_sunday_sctp_timer_source_get_timeout (void)
 {
   return usrsctp_get_timeout ();
 }
 
 void
-_frida_sctp_timer_source_process_timers (guint32 elapsed_msec)
+_sunday_sctp_timer_source_process_timers (guint32 elapsed_msec)
 {
   usrsctp_handle_timers (elapsed_msec);
 }

@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class PortalClient : Object, AgentSessionProvider {
 		public signal void resume ();
 		public signal void kill ();
@@ -361,7 +361,7 @@ namespace Frida {
 					id: id,
 					persist_timeout: persist_timeout,
 					message_sink: sink,
-					frida_context: MainContext.ref_thread_default (),
+					sunday_context: MainContext.ref_thread_default (),
 					dbus_context: dbus_context
 				);
 			}

@@ -1,4 +1,4 @@
-public sealed class Frida.SymbolResolver : Object {
+public sealed class Sunday.SymbolResolver : Object {
 	private Gee.Map<uint, ProcMapsSnapshot> cache = new Gee.HashMap<uint, ProcMapsSnapshot> ();
 
 	private Gee.Map<uint, Gee.Map<uint32, PendingMapEvent>> pending = new Gee.HashMap<uint, Gee.Map<uint32, PendingMapEvent>> ();

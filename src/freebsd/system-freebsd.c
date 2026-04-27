@@ -7,74 +7,74 @@
 #include <sys/types.h>
 #include <sys/user.h>
 
-typedef struct _FridaEnumerateProcessesOperation FridaEnumerateProcessesOperation;
+typedef struct _SundayEnumerateProcessesOperation SundayEnumerateProcessesOperation;
 
-struct _FridaEnumerateProcessesOperation
+struct _SundayEnumerateProcessesOperation
 {
-  FridaScope scope;
+  SundayScope scope;
 
   GArray * result;
 };
 
-static void frida_collect_process_info_from_pid (guint pid, FridaEnumerateProcessesOperation * op);
-static void frida_collect_process_info_from_kinfo (struct kinfo_proc * process, FridaEnumerateProcessesOperation * op);
+static void sunday_collect_process_info_from_pid (guint pid, SundayEnumerateProcessesOperation * op);
+static void sunday_collect_process_info_from_kinfo (struct kinfo_proc * process, SundayEnumerateProcessesOperation * op);
 
-static void frida_add_process_metadata (GHashTable * parameters, const struct kinfo_proc * process);
+static void sunday_add_process_metadata (GHashTable * parameters, const struct kinfo_proc * process);
 
-static struct kinfo_proc * frida_system_query_kinfo_procs (guint * count);
-static gboolean frida_system_query_proc_pathname (pid_t pid, gchar * path, gsize size);
-static GVariant * frida_uid_to_name (uid_t uid);
+static struct kinfo_proc * sunday_system_query_kinfo_procs (guint * count);
+static gboolean sunday_system_query_proc_pathname (pid_t pid, gchar * path, gsize size);
+static GVariant * sunday_uid_to_name (uid_t uid);
 
 void
-frida_system_get_frontmost_application (FridaFrontmostQueryOptions * options, FridaHostApplicationInfo * result, GError ** error)
+sunday_system_get_frontmost_application (SundayFrontmostQueryOptions * options, SundayHostApplicationInfo * result, GError ** error)
 {
   g_set_error (error,
-      FRIDA_ERROR,
-      FRIDA_ERROR_NOT_SUPPORTED,
+      SUNDAY_ERROR,
+      SUNDAY_ERROR_NOT_SUPPORTED,
       "Not implemented");
 }
 
-FridaHostApplicationInfo *
-frida_system_enumerate_applications (FridaApplicationQueryOptions * options, int * result_length)
+SundayHostApplicationInfo *
+sunday_system_enumerate_applications (SundayApplicationQueryOptions * options, int * result_length)
 {
   *result_length = 0;
 
   return NULL;
 }
 
-FridaHostProcessInfo *
-frida_system_enumerate_processes (FridaProcessQueryOptions * options, int * result_length)
+SundayHostProcessInfo *
+sunday_system_enumerate_processes (SundayProcessQueryOptions * options, int * result_length)
 {
-  FridaEnumerateProcessesOperation op;
+  SundayEnumerateProcessesOperation op;
 
-  op.scope = frida_process_query_options_get_scope (options);
+  op.scope = sunday_process_query_options_get_scope (options);
 
-  op.result = g_array_new (FALSE, FALSE, sizeof (FridaHostProcessInfo));
+  op.result = g_array_new (FALSE, FALSE, sizeof (SundayHostProcessInfo));
 
-  if (frida_process_query_options_has_selected_pids (options))
+  if (sunday_process_query_options_has_selected_pids (options))
   {
-    frida_process_query_options_enumerate_selected_pids (options, (GFunc) frida_collect_process_info_from_pid, &op);
+    sunday_process_query_options_enumerate_selected_pids (options, (GFunc) sunday_collect_process_info_from_pid, &op);
   }
   else
   {
     struct kinfo_proc * processes;
     guint count, i;
 
-    processes = frida_system_query_kinfo_procs (&count);
+    processes = sunday_system_query_kinfo_procs (&count);
 
     for (i = 0; i != count; i++)
-      frida_collect_process_info_from_kinfo (&processes[i], &op);
+      sunday_collect_process_info_from_kinfo (&processes[i], &op);
 
     g_free (processes);
   }
 
   *result_length = op.result->len;
 
-  return (FridaHostProcessInfo *) g_array_free (op.result, FALSE);
+  return (SundayHostProcessInfo *) g_array_free (op.result, FALSE);
 }
 
 static void
-frida_collect_process_info_from_pid (guint pid, FridaEnumerateProcessesOperation * op)
+sunday_collect_process_info_from_pid (guint pid, SundayEnumerateProcessesOperation * op)
 {
   struct kinfo_proc process;
   size_t size;
@@ -89,25 +89,25 @@ frida_collect_process_info_from_pid (guint pid, FridaEnumerateProcessesOperation
   if (size == 0)
     return;
 
-  frida_collect_process_info_from_kinfo (&process, op);
+  sunday_collect_process_info_from_kinfo (&process, op);
 }
 
 static void
-frida_collect_process_info_from_kinfo (struct kinfo_proc * process, FridaEnumerateProcessesOperation * op)
+sunday_collect_process_info_from_kinfo (struct kinfo_proc * process, SundayEnumerateProcessesOperation * op)
 {
-  FridaHostProcessInfo info = { 0, };
-  FridaScope scope = op->scope;
+  SundayHostProcessInfo info = { 0, };
+  SundayScope scope = op->scope;
   gboolean still_alive;
   gchar path[PATH_MAX];
 
   info.pid = process->ki_pid;
 
-  info.parameters = frida_make_parameters_dict ();
+  info.parameters = sunday_make_parameters_dict ();
 
-  if (scope != FRIDA_SCOPE_MINIMAL)
-    frida_add_process_metadata (info.parameters, process);
+  if (scope != SUNDAY_SCOPE_MINIMAL)
+    sunday_add_process_metadata (info.parameters, process);
 
-  still_alive = frida_system_query_proc_pathname (info.pid, path, sizeof (path));
+  still_alive = sunday_system_query_proc_pathname (info.pid, path, sizeof (path));
   if (still_alive)
   {
     if (path[0] != '\0')
@@ -115,35 +115,35 @@ frida_collect_process_info_from_kinfo (struct kinfo_proc * process, FridaEnumera
     else
       info.name = g_strdup (process->ki_comm);
 
-    if (scope != FRIDA_SCOPE_MINIMAL)
+    if (scope != SUNDAY_SCOPE_MINIMAL)
       g_hash_table_insert (info.parameters, g_strdup ("path"), g_variant_ref_sink (g_variant_new_string (path)));
   }
 
   if (still_alive)
     g_array_append_val (op->result, info);
   else
-    frida_host_process_info_destroy (&info);
+    sunday_host_process_info_destroy (&info);
 }
 
 void
-frida_system_kill (guint pid)
+sunday_system_kill (guint pid)
 {
   kill (pid, SIGKILL);
 }
 
 gchar *
-frida_temporary_directory_get_system_tmp (void)
+sunday_temporary_directory_get_system_tmp (void)
 {
   return g_strdup (g_get_tmp_dir ());
 }
 
 static void
-frida_add_process_metadata (GHashTable * parameters, const struct kinfo_proc * process)
+sunday_add_process_metadata (GHashTable * parameters, const struct kinfo_proc * process)
 {
   const struct timeval * started = &process->ki_start;
   GDateTime * t0, * t1;
 
-  g_hash_table_insert (parameters, g_strdup ("user"), frida_uid_to_name (process->ki_uid));
+  g_hash_table_insert (parameters, g_strdup ("user"), sunday_uid_to_name (process->ki_uid));
 
   g_hash_table_insert (parameters, g_strdup ("ppid"), g_variant_ref_sink (g_variant_new_int64 (process->ki_ppid)));
 
@@ -155,7 +155,7 @@ frida_add_process_metadata (GHashTable * parameters, const struct kinfo_proc * p
 }
 
 static struct kinfo_proc *
-frida_system_query_kinfo_procs (guint * count)
+sunday_system_query_kinfo_procs (guint * count)
 {
   gboolean success = FALSE;
   int mib[3];
@@ -200,7 +200,7 @@ beach:
 }
 
 static gboolean
-frida_system_query_proc_pathname (pid_t pid, gchar * path, gsize size)
+sunday_system_query_proc_pathname (pid_t pid, gchar * path, gsize size)
 {
   gboolean success;
   int mib[4];
@@ -222,7 +222,7 @@ frida_system_query_proc_pathname (pid_t pid, gchar * path, gsize size)
 }
 
 static GVariant *
-frida_uid_to_name (uid_t uid)
+sunday_uid_to_name (uid_t uid)
 {
   GVariant * name;
   static size_t cached_buffer_size = 0;

@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class ChannelRegistry : Object {
 		public signal void channel_closed (ChannelId id);
 

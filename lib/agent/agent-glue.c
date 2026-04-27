@@ -16,7 +16,7 @@
 #endif
 
 void
-_frida_agent_environment_init (void)
+_sunday_agent_environment_init (void)
 {
 #ifdef HAVE_MUSL
   static gboolean been_here = FALSE;
@@ -27,11 +27,11 @@ _frida_agent_environment_init (void)
 #endif
 
 #ifdef _MSC_VER
-  frida_libc_shim_init ();
+  sunday_libc_shim_init ();
 #endif
   gio_init ();
 
-  g_thread_set_garbage_handler (_frida_agent_on_pending_thread_garbage, NULL);
+  g_thread_set_garbage_handler (_sunday_agent_on_pending_thread_garbage, NULL);
 
 #if defined (HAVE_GIOAPPLE)
   g_io_module_apple_register ();
@@ -40,7 +40,7 @@ _frida_agent_environment_init (void)
 #endif
 
   gum_script_backend_get_type (); /* Warm up */
-  frida_error_quark (); /* Initialize early so GDBus will pick it up */
+  sunday_error_quark (); /* Initialize early so GDBus will pick it up */
 
 #if defined (HAVE_ANDROID) && __ANDROID_API__ < __ANDROID_API_L__
   /*
@@ -52,10 +52,10 @@ _frida_agent_environment_init (void)
 }
 
 void
-_frida_agent_environment_deinit (void)
+_sunday_agent_environment_deinit (void)
 {
 #ifndef HAVE_MUSL
-  frida_libc_shim_prepare_to_deinit ();
+  sunday_libc_shim_prepare_to_deinit ();
 
   gum_shutdown ();
   gio_shutdown ();
@@ -63,10 +63,10 @@ _frida_agent_environment_deinit (void)
 
   gio_deinit ();
 
-  frida_run_atexit_handlers ();
+  sunday_run_atexit_handlers ();
 
 # if defined (_MSC_VER) || defined (HAVE_DARWIN)
-  frida_libc_shim_deinit ();
+  sunday_libc_shim_deinit ();
 # endif
 #endif
 }
@@ -76,7 +76,7 @@ _frida_agent_environment_deinit (void)
 jint
 JNI_OnLoad (JavaVM * vm, void * reserved)
 {
-  FridaAgentBridgeState * state = reserved;
+  SundayAgentBridgeState * state = reserved;
 
   sunday_agent_main (state->agent_parameters, &state->unload_policy, state->injector_state);
 

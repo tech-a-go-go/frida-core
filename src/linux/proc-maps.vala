@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class ProcMapsSnapshot : Object {
 		public uint32 gen {
 			get;

@@ -1,20 +1,20 @@
 #include "elf-parser.h"
 
-static const ElfW(Phdr) * frida_find_program_header_by_type (const ElfW(Ehdr) * ehdr, ElfW(Word) type);
-static size_t frida_compute_elf_region_upper_bound (const ElfW(Ehdr) * ehdr, ElfW(Addr) address);
+static const ElfW(Phdr) * sunday_find_program_header_by_type (const ElfW(Ehdr) * ehdr, ElfW(Word) type);
+static size_t sunday_compute_elf_region_upper_bound (const ElfW(Ehdr) * ehdr, ElfW(Addr) address);
 
 const ElfW(Dyn) *
-frida_elf_find_dynamic_section (const ElfW(Ehdr) * ehdr)
+sunday_elf_find_dynamic_section (const ElfW(Ehdr) * ehdr)
 {
   const ElfW(Phdr) * dyn;
 
-  dyn = frida_find_program_header_by_type (ehdr, PT_DYNAMIC);
+  dyn = sunday_find_program_header_by_type (ehdr, PT_DYNAMIC);
 
   return (void *) ehdr + dyn->p_vaddr;
 }
 
 const char *
-frida_elf_query_soname (const ElfW(Ehdr) * ehdr)
+sunday_elf_query_soname (const ElfW(Ehdr) * ehdr)
 {
   ElfW(Addr) soname_offset, strings_base;
   const ElfW(Phdr) * dyn;
@@ -23,7 +23,7 @@ frida_elf_query_soname (const ElfW(Ehdr) * ehdr)
 
   soname_offset = 0;
   strings_base = 0;
-  dyn = frida_find_program_header_by_type (ehdr, PT_DYNAMIC);
+  dyn = sunday_find_program_header_by_type (ehdr, PT_DYNAMIC);
   num_entries = dyn->p_filesz / sizeof (ElfW(Dyn));
   entries = (void *) ehdr + dyn->p_vaddr;
   for (i = 0; i != num_entries; i++)
@@ -51,7 +51,7 @@ frida_elf_query_soname (const ElfW(Ehdr) * ehdr)
 }
 
 void
-frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc func, void * user_data)
+sunday_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, SundayFoundElfSymbolFunc func, void * user_data)
 {
   ElfW(Addr) symbols_base, strings_base;
   size_t symbols_size, strings_size;
@@ -63,7 +63,7 @@ frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc fu
   strings_base = 0;
   symbols_size = 0;
   strings_size = 0;
-  dyn = frida_find_program_header_by_type (ehdr, PT_DYNAMIC);
+  dyn = sunday_find_program_header_by_type (ehdr, PT_DYNAMIC);
   num_entries = dyn->p_filesz / sizeof (ElfW(Dyn));
   for (i = 0; i != num_entries; i++)
   {
@@ -91,7 +91,7 @@ frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc fu
     symbols_base += (ElfW(Addr)) ehdr;
     strings_base += (ElfW(Addr)) ehdr;
   }
-  symbols_size = frida_compute_elf_region_upper_bound (ehdr, symbols_base - (ElfW(Addr)) ehdr);
+  symbols_size = sunday_compute_elf_region_upper_bound (ehdr, symbols_base - (ElfW(Addr)) ehdr);
   if (symbols_size == 0)
     return;
   num_symbols = symbols_size / sizeof (ElfW(Sym));
@@ -100,7 +100,7 @@ frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc fu
   {
     ElfW(Sym) * sym;
     bool probably_reached_end;
-    FridaElfExportDetails d;
+    SundayElfExportDetails d;
 
     sym = (void *) symbols_base + (i * sizeof (ElfW(Sym)));
 
@@ -111,11 +111,11 @@ frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc fu
     if (sym->st_shndx == SHN_UNDEF)
       continue;
 
-    d.type = FRIDA_ELF_ST_TYPE (sym->st_info);
+    d.type = SUNDAY_ELF_ST_TYPE (sym->st_info);
     if (!(d.type == STT_FUNC || d.type == STT_OBJECT))
       continue;
 
-    d.bind = FRIDA_ELF_ST_BIND (sym->st_info);
+    d.bind = SUNDAY_ELF_ST_BIND (sym->st_info);
     if (!(d.bind == STB_GLOBAL || d.bind == STB_WEAK))
       continue;
 
@@ -128,7 +128,7 @@ frida_elf_enumerate_exports (const ElfW(Ehdr) * ehdr, FridaFoundElfSymbolFunc fu
 }
 
 void
-frida_elf_enumerate_symbols (const ElfW(Ehdr) * ehdr, void * loaded_base, FridaFoundElfSymbolFunc func, void * user_data)
+sunday_elf_enumerate_symbols (const ElfW(Ehdr) * ehdr, void * loaded_base, SundayFoundElfSymbolFunc func, void * user_data)
 {
   const ElfW(Sym) * symbols;
   size_t symbols_entsize, num_symbols;
@@ -163,16 +163,16 @@ frida_elf_enumerate_symbols (const ElfW(Ehdr) * ehdr, void * loaded_base, FridaF
   for (i = 0; i != num_symbols; i++)
   {
     const ElfW(Sym) * sym = &symbols[i];
-    FridaElfExportDetails d;
+    SundayElfExportDetails d;
 
     if (sym->st_shndx == SHN_UNDEF)
       continue;
 
-    d.type = FRIDA_ELF_ST_TYPE (sym->st_info);
+    d.type = SUNDAY_ELF_ST_TYPE (sym->st_info);
     if (!(d.type == STT_FUNC || d.type == STT_OBJECT))
       continue;
 
-    d.bind = FRIDA_ELF_ST_BIND (sym->st_info);
+    d.bind = SUNDAY_ELF_ST_BIND (sym->st_info);
 
     d.name = strings + sym->st_name;
     d.address = loaded_base + sym->st_value;
@@ -183,7 +183,7 @@ frida_elf_enumerate_symbols (const ElfW(Ehdr) * ehdr, void * loaded_base, FridaF
 }
 
 static const ElfW(Phdr) *
-frida_find_program_header_by_type (const ElfW(Ehdr) * ehdr, ElfW(Word) type)
+sunday_find_program_header_by_type (const ElfW(Ehdr) * ehdr, ElfW(Word) type)
 {
   ElfW(Half) i;
 
@@ -198,7 +198,7 @@ frida_find_program_header_by_type (const ElfW(Ehdr) * ehdr, ElfW(Word) type)
 }
 
 ElfW(Addr)
-frida_elf_compute_base_from_phdrs (const ElfW(Phdr) * phdrs, ElfW(Half) phdr_size, ElfW(Half) phdr_count, size_t page_size)
+sunday_elf_compute_base_from_phdrs (const ElfW(Phdr) * phdrs, ElfW(Half) phdr_size, ElfW(Half) phdr_count, size_t page_size)
 {
   ElfW(Addr) base_address;
   ElfW(Half) i;
@@ -221,13 +221,13 @@ frida_elf_compute_base_from_phdrs (const ElfW(Phdr) * phdrs, ElfW(Half) phdr_siz
   }
 
   if (base_address == 0)
-    base_address = FRIDA_ELF_PAGE_START (phdrs, page_size);
+    base_address = SUNDAY_ELF_PAGE_START (phdrs, page_size);
 
   return base_address;
 }
 
 static size_t
-frida_compute_elf_region_upper_bound (const ElfW(Ehdr) * ehdr, ElfW(Addr) address)
+sunday_compute_elf_region_upper_bound (const ElfW(Ehdr) * ehdr, ElfW(Addr) address)
 {
   ElfW(Half) i;
 

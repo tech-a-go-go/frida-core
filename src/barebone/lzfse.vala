@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone.LZFSE {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone.LZFSE {
 	public bool is_lzfse (Bytes buf) {
 		if (buf.get_size () < 4)
 			return false;

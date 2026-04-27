@@ -1,4 +1,4 @@
-#define FRIDA_PRINTF_BUFFER_SIZE (512 * 1024)
+#define SUNDAY_PRINTF_BUFFER_SIZE (512 * 1024)
 #define _GNU_SOURCE
 
 #include <errno.h>
@@ -57,21 +57,21 @@
 #undef vsnprintf
 
 #ifdef HAVE_MUSL
-# define FRIDA_STDIO_OPAQUE_FILE 1
+# define SUNDAY_STDIO_OPAQUE_FILE 1
 #endif
 
-static gboolean frida_deinit_expected = FALSE;
+static gboolean sunday_deinit_expected = FALSE;
 
 void
-frida_libc_shim_prepare_to_deinit (void)
+sunday_libc_shim_prepare_to_deinit (void)
 {
-  frida_deinit_expected = TRUE;
+  sunday_deinit_expected = TRUE;
 }
 
 #if defined (HAVE_WINDOWS) || defined (HAVE_ASAN)
 
 void
-frida_run_atexit_handlers (void)
+sunday_run_atexit_handlers (void)
 {
 }
 
@@ -81,7 +81,7 @@ G_GNUC_INTERNAL
 __attribute__ ((constructor)) static
 # endif
 void
-frida_libc_shim_init (void)
+sunday_libc_shim_init (void)
 {
 # ifdef HAVE_ASAN
   gum_init ();
@@ -96,9 +96,9 @@ G_GNUC_INTERNAL
 __attribute__ ((destructor)) static
 # endif
 void
-frida_libc_shim_deinit (void)
+sunday_libc_shim_deinit (void)
 {
-  if (!frida_deinit_expected)
+  if (!sunday_deinit_expected)
     return;
 
 # ifdef HAVE_ASAN
@@ -110,8 +110,8 @@ frida_libc_shim_deinit (void)
 
 #else
 
-#define FRIDA_SHIM_LOCK() gum_spinlock_acquire (&frida_shim_lock)
-#define FRIDA_SHIM_UNLOCK() gum_spinlock_release (&frida_shim_lock)
+#define SUNDAY_SHIM_LOCK() gum_spinlock_acquire (&sunday_shim_lock)
+#define SUNDAY_SHIM_UNLOCK() gum_spinlock_release (&sunday_shim_lock)
 
 #ifndef _IONBF
 # define _IONBF 0
@@ -123,14 +123,14 @@ frida_libc_shim_deinit (void)
 # define O_DIRECTORY 0
 #endif
 
-#define FRIDA_FILE_MAGIC 0x46524944u /* 'FRID' */
-#define FRIDA_DIR_MAGIC  0x46444952u /* 'FDIR' */
+#define SUNDAY_FILE_MAGIC 0x46524944u /* 'FRID' */
+#define SUNDAY_DIR_MAGIC  0x46444952u /* 'FDIR' */
 
-#define FRIDA_STDIO_BUFSIZE 4096
-#define FRIDA_GETLINE_INITIAL_SIZE 128
+#define SUNDAY_STDIO_BUFSIZE 4096
+#define SUNDAY_GETLINE_INITIAL_SIZE 128
 
 #if defined (HAVE_LINUX) || defined (HAVE_DARWIN)
-# define HAVE_FRIDA_DIR
+# define HAVE_SUNDAY_DIR
 #endif
 
 #if !defined (SYS_getdents64) && defined (__NR_getdents64)
@@ -141,20 +141,20 @@ frida_libc_shim_deinit (void)
 # define SYS_getdirentries64 __NR_getdirentries64
 #endif
 
-typedef struct _FridaExitEntry FridaExitEntry;
-typedef void (* FridaExitFunc) (gpointer user_data);
+typedef struct _SundayExitEntry SundayExitEntry;
+typedef void (* SundayExitFunc) (gpointer user_data);
 
-typedef struct _FridaFile FridaFile;
-typedef struct _FridaFileHandle FridaFileHandle;
-typedef struct _FridaDir FridaDir;
+typedef struct _SundayFile SundayFile;
+typedef struct _SundayFileHandle SundayFileHandle;
+typedef struct _SundayDir SundayDir;
 
-struct _FridaExitEntry
+struct _SundayExitEntry
 {
-  FridaExitFunc func;
+  SundayExitFunc func;
   gpointer user_data;
 };
 
-struct _FridaFile
+struct _SundayFile
 {
   int fd;
   gboolean close_fd;
@@ -179,15 +179,15 @@ struct _FridaFile
   guint ungot_len;
 };
 
-struct _FridaFileHandle
+struct _SundayFileHandle
 {
   guint32 magic;
-  FridaFile * impl;
+  SundayFile * impl;
 };
 
-#ifdef HAVE_FRIDA_DIR
+#ifdef HAVE_SUNDAY_DIR
 
-struct _FridaDir
+struct _SundayDir
 {
   guint32 magic;
 
@@ -204,54 +204,54 @@ struct _FridaDir
 
 #endif
 
-static FILE * frida_fopen_impl (const char * pathname, const char * mode);
-static int frida_fseek_impl (FILE * stream, off_t offset, int whence);
-static off_t frida_ftell_impl (FILE * stream);
+static FILE * sunday_fopen_impl (const char * pathname, const char * mode);
+static int sunday_fseek_impl (FILE * stream, off_t offset, int whence);
+static off_t sunday_ftell_impl (FILE * stream);
 
-static void frida_stdio_register_stream (FILE * stream);
-static void frida_stdio_unregister_stream (FILE * stream);
-#ifdef HAVE_FRIDA_DIR
-static void frida_stdio_register_dir (DIR * dirp);
-static void frida_stdio_unregister_dir (DIR * dirp);
+static void sunday_stdio_register_stream (FILE * stream);
+static void sunday_stdio_unregister_stream (FILE * stream);
+#ifdef HAVE_SUNDAY_DIR
+static void sunday_stdio_register_dir (DIR * dirp);
+static void sunday_stdio_unregister_dir (DIR * dirp);
 #endif
-static void frida_flush_all_streams (int * result);
+static void sunday_flush_all_streams (int * result);
 
-static FridaFile * frida_file_get_impl (FILE * stream);
-static void frida_file_bind_slot (FILE * slot, FridaFile * impl);
-static FILE * frida_file_wrap (FridaFile * impl);
-static void frida_file_unwrap (FILE * stream);
+static SundayFile * sunday_file_get_impl (FILE * stream);
+static void sunday_file_bind_slot (FILE * slot, SundayFile * impl);
+static FILE * sunday_file_wrap (SundayFile * impl);
+static void sunday_file_unwrap (FILE * stream);
 
-static FridaFile * frida_file_new (int fd, gboolean close_fd, int buf_mode);
-static void frida_file_free (FridaFile * f);
-static int frida_file_flush_write (FridaFile * f);
-static ssize_t frida_file_fill_read (FridaFile * f);
+static SundayFile * sunday_file_new (int fd, gboolean close_fd, int buf_mode);
+static void sunday_file_free (SundayFile * f);
+static int sunday_file_flush_write (SundayFile * f);
+static ssize_t sunday_file_fill_read (SundayFile * f);
 
-static void frida_parse_fopen_mode (const char * mode, int * oflags);
+static void sunday_parse_fopen_mode (const char * mode, int * oflags);
 
-static int frida_write_formatted_to_fd (int fd, const char * format, va_list args);
+static int sunday_write_formatted_to_fd (int fd, const char * format, va_list args);
 
-static gboolean frida_utf8_expected_len (guint8 first, guint * out_len);
+static gboolean sunday_utf8_expected_len (guint8 first, guint * out_len);
 
-#ifdef HAVE_FRIDA_DIR
-static FridaDir * frida_dir_get_impl (DIR * dirp);
-static DIR * frida_dir_wrap (FridaDir * impl);
-static void frida_dir_free (FridaDir * d);
+#ifdef HAVE_SUNDAY_DIR
+static SundayDir * sunday_dir_get_impl (DIR * dirp);
+static DIR * sunday_dir_wrap (SundayDir * impl);
+static void sunday_dir_free (SundayDir * d);
 
 # ifdef HAVE_DARWIN
-static int frida_dir_refill_darwin (FridaDir * d);
-static guint8 frida_darwin_objtype_to_dtype (guint32 objtype);
+static int sunday_dir_refill_darwin (SundayDir * d);
+static guint8 sunday_darwin_objtype_to_dtype (guint32 objtype);
 # else
-static ssize_t frida_getdirents_nointr (int fd, void * buf, size_t size);
+static ssize_t sunday_getdirents_nointr (int fd, void * buf, size_t size);
 # endif
 #endif
 
-static int frida_open_nointr (const char * pathname, int flags, mode_t mode);
-static ssize_t frida_read_nointr (int fd, void * buf, size_t count);
-static ssize_t frida_write_nointr (int fd, const void * buf, size_t count);
-static int frida_close_nointr (int fd);
-static off_t frida_lseek_nointr (int fd, off_t offset, int whence);
+static int sunday_open_nointr (const char * pathname, int flags, mode_t mode);
+static ssize_t sunday_read_nointr (int fd, void * buf, size_t count);
+static ssize_t sunday_write_nointr (int fd, const void * buf, size_t count);
+static int sunday_close_nointr (int fd);
+static off_t sunday_lseek_nointr (int fd, off_t offset, int whence);
 
-#ifndef FRIDA_STDIO_OPAQUE_FILE
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
 G_GNUC_INTERNAL FILE __sF[3];
 
 G_GNUC_INTERNAL FILE * stdin = &__sF[0];
@@ -264,33 +264,33 @@ G_GNUC_INTERNAL FILE * __stdoutp = &__sF[1];
 G_GNUC_INTERNAL FILE * __stderrp = &__sF[2];
 # endif
 #else
-static FridaFileHandle frida_stdio[3];
+static SundayFileHandle sunday_stdio[3];
 
-G_GNUC_INTERNAL FILE * const stdin = (FILE *) &frida_stdio[0];
-G_GNUC_INTERNAL FILE * const stdout = (FILE *) &frida_stdio[1];
-G_GNUC_INTERNAL FILE * const stderr = (FILE *) &frida_stdio[2];
+G_GNUC_INTERNAL FILE * const stdin = (FILE *) &sunday_stdio[0];
+G_GNUC_INTERNAL FILE * const stdout = (FILE *) &sunday_stdio[1];
+G_GNUC_INTERNAL FILE * const stderr = (FILE *) &sunday_stdio[2];
 #endif
 
-static gboolean frida_libc_shim_initialized = FALSE;
+static gboolean sunday_libc_shim_initialized = FALSE;
 
-static FridaExitEntry * frida_atexit_entries = NULL;
-static guint frida_atexit_count = 0;
+static SundayExitEntry * sunday_atexit_entries = NULL;
+static guint sunday_atexit_count = 0;
 
-static GumSpinlock frida_shim_lock = GUM_SPINLOCK_INIT;
+static GumSpinlock sunday_shim_lock = GUM_SPINLOCK_INIT;
 
-G_LOCK_DEFINE_STATIC (frida_stdio);
+G_LOCK_DEFINE_STATIC (sunday_stdio);
 
-static GHashTable * frida_streams = NULL;
-#ifdef HAVE_FRIDA_DIR
-static GHashTable * frida_dirs = NULL;
+static GHashTable * sunday_streams = NULL;
+#ifdef HAVE_SUNDAY_DIR
+static GHashTable * sunday_dirs = NULL;
 #endif
 
 __attribute__ ((constructor)) static void
-frida_libc_shim_init (void)
+sunday_libc_shim_init (void)
 {
-  FridaFile * f0, * f1, * f2;
+  SundayFile * f0, * f1, * f2;
 
-  if (frida_libc_shim_initialized)
+  if (sunday_libc_shim_initialized)
     return;
 
   gum_init_embedded ();
@@ -299,37 +299,37 @@ frida_libc_shim_init (void)
   f1 = NULL;
   f2 = NULL;
 
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  frida_streams = g_hash_table_new (g_direct_hash, g_direct_equal);
-#ifdef HAVE_FRIDA_DIR
-  frida_dirs = g_hash_table_new (g_direct_hash, g_direct_equal);
+  sunday_streams = g_hash_table_new (g_direct_hash, g_direct_equal);
+#ifdef HAVE_SUNDAY_DIR
+  sunday_dirs = g_hash_table_new (g_direct_hash, g_direct_equal);
 #endif
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 
-  f0 = frida_file_new (0, FALSE, _IOFBF);
-#ifndef FRIDA_STDIO_OPAQUE_FILE
-  frida_file_bind_slot (&__sF[0], f0);
+  f0 = sunday_file_new (0, FALSE, _IOFBF);
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
+  sunday_file_bind_slot (&__sF[0], f0);
 #else
-  frida_file_bind_slot ((FILE *) &frida_stdio[0], f0);
+  sunday_file_bind_slot ((FILE *) &sunday_stdio[0], f0);
 #endif
 
-  f1 = frida_file_new (1, FALSE, _IOLBF);
-#ifndef FRIDA_STDIO_OPAQUE_FILE
-  frida_file_bind_slot (&__sF[1], f1);
+  f1 = sunday_file_new (1, FALSE, _IOLBF);
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
+  sunday_file_bind_slot (&__sF[1], f1);
 #else
-  frida_file_bind_slot ((FILE *) &frida_stdio[1], f1);
+  sunday_file_bind_slot ((FILE *) &sunday_stdio[1], f1);
 #endif
 
-  f2 = frida_file_new (2, FALSE, _IONBF);
-#ifndef FRIDA_STDIO_OPAQUE_FILE
-  frida_file_bind_slot (&__sF[2], f2);
+  f2 = sunday_file_new (2, FALSE, _IONBF);
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
+  sunday_file_bind_slot (&__sF[2], f2);
 #else
-  frida_file_bind_slot ((FILE *) &frida_stdio[2], f2);
+  sunday_file_bind_slot ((FILE *) &sunday_stdio[2], f2);
 #endif
 
-  frida_libc_shim_initialized = TRUE;
+  sunday_libc_shim_initialized = TRUE;
 }
 
 /*
@@ -346,110 +346,110 @@ void
 #else
 __attribute__ ((destructor)) static void
 #endif
-frida_libc_shim_deinit (void)
+sunday_libc_shim_deinit (void)
 {
-  FridaFileHandle * sh;
+  SundayFileHandle * sh;
   GHashTableIter iter;
   gpointer key;
 
-  assert (frida_libc_shim_initialized);
+  assert (sunday_libc_shim_initialized);
 
   fflush (NULL);
 
-  if (!frida_deinit_expected)
+  if (!sunday_deinit_expected)
     return;
 
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_iter_init (&iter, frida_streams);
+  g_hash_table_iter_init (&iter, sunday_streams);
 
   while (g_hash_table_iter_next (&iter, &key, NULL))
   {
     FILE * stream = key;
-    FridaFile * f;
+    SundayFile * f;
 
-    f = frida_file_get_impl (stream);
+    f = sunday_file_get_impl (stream);
 
-    frida_file_flush_write (f);
+    sunday_file_flush_write (f);
 
     if (f->close_fd)
-      frida_close_nointr (f->fd);
+      sunday_close_nointr (f->fd);
 
-    frida_file_free (f);
-    frida_file_unwrap (stream);
+    sunday_file_free (f);
+    sunday_file_unwrap (stream);
 
     g_hash_table_iter_remove (&iter);
   }
 
-  g_clear_pointer (&frida_streams, g_hash_table_unref);
+  g_clear_pointer (&sunday_streams, g_hash_table_unref);
 
-#ifdef HAVE_FRIDA_DIR
-  g_hash_table_iter_init (&iter, frida_dirs);
+#ifdef HAVE_SUNDAY_DIR
+  g_hash_table_iter_init (&iter, sunday_dirs);
 
   while (g_hash_table_iter_next (&iter, &key, NULL))
   {
     DIR * dirp = key;
-    FridaDir * d;
+    SundayDir * d;
 
-    d = frida_dir_get_impl (dirp);
+    d = sunday_dir_get_impl (dirp);
 
     if (d->close_fd)
-      frida_close_nointr (d->fd);
+      sunday_close_nointr (d->fd);
 
-    frida_dir_free (d);
+    sunday_dir_free (d);
 
     g_hash_table_iter_remove (&iter);
   }
 
-  g_clear_pointer (&frida_dirs, g_hash_table_unref);
+  g_clear_pointer (&sunday_dirs, g_hash_table_unref);
 #endif
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 
-  sh = (FridaFileHandle *) stdin;
-  g_clear_pointer (&sh->impl, frida_file_free);
+  sh = (SundayFileHandle *) stdin;
+  g_clear_pointer (&sh->impl, sunday_file_free);
   sh->magic = 0;
 
-  sh = (FridaFileHandle *) stdout;
-  g_clear_pointer (&sh->impl, frida_file_free);
+  sh = (SundayFileHandle *) stdout;
+  g_clear_pointer (&sh->impl, sunday_file_free);
   sh->magic = 0;
 
-  sh = (FridaFileHandle *) stderr;
-  g_clear_pointer (&sh->impl, frida_file_free);
+  sh = (SundayFileHandle *) stderr;
+  g_clear_pointer (&sh->impl, sunday_file_free);
   sh->magic = 0;
 
   gum_deinit_embedded ();
 }
 
 void
-frida_run_atexit_handlers (void)
+sunday_run_atexit_handlers (void)
 {
   gint i;
 
-  for (i = (gint) frida_atexit_count - 1; i >= 0; i--)
+  for (i = (gint) sunday_atexit_count - 1; i >= 0; i--)
   {
-    const FridaExitEntry * entry = &frida_atexit_entries[i];
+    const SundayExitEntry * entry = &sunday_atexit_entries[i];
 
     entry->func (entry->user_data);
   }
 
-  gum_free (frida_atexit_entries);
-  frida_atexit_entries = 0;
-  frida_atexit_count = 0;
+  gum_free (sunday_atexit_entries);
+  sunday_atexit_entries = 0;
+  sunday_atexit_count = 0;
 }
 
 G_GNUC_INTERNAL int
 __cxa_atexit (void (* func) (void *), void * arg, void * dso_handle)
 {
-  FridaExitEntry * entry;
+  SundayExitEntry * entry;
 
-  frida_libc_shim_init ();
+  sunday_libc_shim_init ();
 
-  FRIDA_SHIM_LOCK ();
-  frida_atexit_count++;
-  frida_atexit_entries = gum_realloc (frida_atexit_entries, frida_atexit_count * sizeof (FridaExitEntry));
-  entry = &frida_atexit_entries[frida_atexit_count - 1];
-  FRIDA_SHIM_UNLOCK ();
+  SUNDAY_SHIM_LOCK ();
+  sunday_atexit_count++;
+  sunday_atexit_entries = gum_realloc (sunday_atexit_entries, sunday_atexit_count * sizeof (SundayExitEntry));
+  entry = &sunday_atexit_entries[sunday_atexit_count - 1];
+  SUNDAY_SHIM_UNLOCK ();
 
   entry->func = func;
   entry->user_data = arg;
@@ -462,7 +462,7 @@ __cxa_atexit (void (* func) (void *), void * arg, void * dso_handle)
 G_GNUC_INTERNAL int
 atexit (void (* func) (void))
 {
-  __cxa_atexit ((FridaExitFunc) func, NULL, NULL);
+  __cxa_atexit ((SundayExitFunc) func, NULL, NULL);
 
   return 0;
 }
@@ -543,7 +543,7 @@ printf (const char * format, ...)
   va_list args;
 
   va_start (args, format);
-  result = frida_write_formatted_to_fd (1, format, args);
+  result = sunday_write_formatted_to_fd (1, format, args);
   va_end (args);
 
   return result;
@@ -556,7 +556,7 @@ fprintf (FILE * stream, const char * format, ...)
   va_list args;
 
   va_start (args, format);
-  result = frida_write_formatted_to_fd (frida_file_get_impl (stream)->fd, format, args);
+  result = sunday_write_formatted_to_fd (sunday_file_get_impl (stream)->fd, format, args);
   va_end (args);
 
   return result;
@@ -569,7 +569,7 @@ sprintf (char * string, const char * format, ...)
   va_list args;
 
   va_start (args, format);
-  result = gum_vsnprintf (string, FRIDA_PRINTF_BUFFER_SIZE, format, args);
+  result = gum_vsnprintf (string, SUNDAY_PRINTF_BUFFER_SIZE, format, args);
   va_end (args);
 
   return result;
@@ -591,13 +591,13 @@ snprintf (char * string, size_t size, const char * format, ...)
 G_GNUC_INTERNAL int
 vprintf (const char * format, va_list args)
 {
-  return frida_write_formatted_to_fd (1, format, args);
+  return sunday_write_formatted_to_fd (1, format, args);
 }
 
 G_GNUC_INTERNAL int
 vfprintf (FILE * stream, const char * format, va_list args)
 {
-  return frida_write_formatted_to_fd (frida_file_get_impl (stream)->fd, format, args);
+  return sunday_write_formatted_to_fd (sunday_file_get_impl (stream)->fd, format, args);
 }
 
 G_GNUC_INTERNAL int
@@ -647,7 +647,7 @@ sprintf_l (char * string, locale_t loc, const char * format, ...)
   va_list args;
 
   va_start (args, format);
-  result = gum_vsnprintf (string, FRIDA_PRINTF_BUFFER_SIZE, format, args);
+  result = gum_vsnprintf (string, SUNDAY_PRINTF_BUFFER_SIZE, format, args);
   va_end (args);
 
   return result;
@@ -684,46 +684,46 @@ asprintf_l (char ** ret, locale_t loc, const char * format, ...)
 #ifdef HAVE_GLIBC
 
 G_GNUC_INTERNAL FILE *
-frida_fopen_glibc_225 (const char * pathname, const char * mode)
+sunday_fopen_glibc_225 (const char * pathname, const char * mode)
 {
-  return frida_fopen_impl (pathname, mode);
+  return sunday_fopen_impl (pathname, mode);
 }
-__asm__ (".symver frida_fopen_glibc_225,fopen@@GLIBC_2.2.5");
+__asm__ (".symver sunday_fopen_glibc_225,fopen@@GLIBC_2.2.5");
 
 G_GNUC_INTERNAL FILE *
-frida_fopen64_glibc_225 (const char * pathname, const char * mode)
+sunday_fopen64_glibc_225 (const char * pathname, const char * mode)
 {
-  return frida_fopen_impl (pathname, mode);
+  return sunday_fopen_impl (pathname, mode);
 }
-__asm__ (".symver frida_fopen64_glibc_225,fopen64@@GLIBC_2.2.5");
+__asm__ (".symver sunday_fopen64_glibc_225,fopen64@@GLIBC_2.2.5");
 
 #else
 
 G_GNUC_INTERNAL FILE *
 fopen (const char * pathname, const char * mode)
 {
-  return frida_fopen_impl (pathname, mode);
+  return sunday_fopen_impl (pathname, mode);
 }
 
 #endif
 
 static FILE *
-frida_fopen_impl (const char * pathname, const char * mode)
+sunday_fopen_impl (const char * pathname, const char * mode)
 {
   FILE * result;
   int oflags, fd;
-  FridaFile * impl;
+  SundayFile * impl;
 
-  frida_parse_fopen_mode (mode, &oflags);
+  sunday_parse_fopen_mode (mode, &oflags);
 
-  fd = frida_open_nointr (pathname, oflags, 0666);
+  fd = sunday_open_nointr (pathname, oflags, 0666);
   if (fd == -1)
     return NULL;
 
-  impl = frida_file_new (fd, TRUE, _IOFBF);
+  impl = sunday_file_new (fd, TRUE, _IOFBF);
 
-  result = frida_file_wrap (impl);
-  frida_stdio_register_stream (result);
+  result = sunday_file_wrap (impl);
+  sunday_stdio_register_stream (result);
 
   return result;
 }
@@ -733,14 +733,14 @@ fdopen (int fd, const char * mode)
 {
   FILE * result;
   int oflags;
-  FridaFile * impl;
+  SundayFile * impl;
 
-  frida_parse_fopen_mode (mode, &oflags);
+  sunday_parse_fopen_mode (mode, &oflags);
 
-  impl = frida_file_new (fd, TRUE, _IOFBF);
+  impl = sunday_file_new (fd, TRUE, _IOFBF);
 
-  result = frida_file_wrap (impl);
-  frida_stdio_register_stream (result);
+  result = sunday_file_wrap (impl);
+  sunday_stdio_register_stream (result);
 
   return result;
 }
@@ -748,22 +748,22 @@ fdopen (int fd, const char * mode)
 G_GNUC_INTERNAL int
 fclose (FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   fflush (stream);
 
   if (f->close_fd)
   {
-    if (frida_close_nointr (f->fd) == -1)
+    if (sunday_close_nointr (f->fd) == -1)
       return EOF;
   }
 
-  frida_stdio_unregister_stream (stream);
+  sunday_stdio_unregister_stream (stream);
 
-  frida_file_free (f);
-  frida_file_unwrap (stream);
+  sunday_file_free (f);
+  sunday_file_unwrap (stream);
 
   return 0;
 }
@@ -771,9 +771,9 @@ fclose (FILE * stream)
 G_GNUC_INTERNAL int
 setvbuf (FILE * stream, char * buf, int mode, size_t size)
 {
-  FridaFile * f;
+  SundayFile * f;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (fflush (stream) != 0)
     return -1;
@@ -885,30 +885,30 @@ fflush (FILE * stream)
 
   if (stream != NULL)
   {
-    FridaFile * f = frida_file_get_impl (stream);
+    SundayFile * f = sunday_file_get_impl (stream);
 
-    if (frida_file_flush_write (f) != 0)
+    if (sunday_file_flush_write (f) != 0)
       result = EOF;
 
     return result;
   }
 
   {
-    FridaFile * f0, * f1, * f2;
+    SundayFile * f0, * f1, * f2;
 
-    f0 = frida_file_get_impl (stdin);
-    f1 = frida_file_get_impl (stdout);
-    f2 = frida_file_get_impl (stderr);
+    f0 = sunday_file_get_impl (stdin);
+    f1 = sunday_file_get_impl (stdout);
+    f2 = sunday_file_get_impl (stderr);
 
-    if (frida_file_flush_write (f0) != 0)
+    if (sunday_file_flush_write (f0) != 0)
       result = EOF;
-    if (frida_file_flush_write (f1) != 0)
+    if (sunday_file_flush_write (f1) != 0)
       result = EOF;
-    if (frida_file_flush_write (f2) != 0)
+    if (sunday_file_flush_write (f2) != 0)
       result = EOF;
   }
 
-  frida_flush_all_streams (&result);
+  sunday_flush_all_streams (&result);
 
   return result;
 }
@@ -916,27 +916,27 @@ fflush (FILE * stream)
 G_GNUC_INTERNAL int
 fileno (FILE * stream)
 {
-  return frida_file_get_impl (stream)->fd;
+  return sunday_file_get_impl (stream)->fd;
 }
 
 G_GNUC_INTERNAL int
 feof (FILE * stream)
 {
-  return frida_file_get_impl (stream)->eof ? 1 : 0;
+  return sunday_file_get_impl (stream)->eof ? 1 : 0;
 }
 
 G_GNUC_INTERNAL int
 ferror (FILE * stream)
 {
-  return (frida_file_get_impl (stream)->err != 0) ? 1 : 0;
+  return (sunday_file_get_impl (stream)->err != 0) ? 1 : 0;
 }
 
 G_GNUC_INTERNAL int
 getc_unlocked (FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (f->ungot_len != 0)
     return f->ungot_buf[--f->ungot_len];
@@ -946,7 +946,7 @@ getc_unlocked (FILE * stream)
     unsigned char ch;
     ssize_t n;
 
-    n = frida_read_nointr (f->fd, &ch, 1);
+    n = sunday_read_nointr (f->fd, &ch, 1);
     if (n == -1)
     {
       f->err = errno;
@@ -964,7 +964,7 @@ getc_unlocked (FILE * stream)
 
   if (f->rpos == f->rlen)
   {
-    if (frida_file_fill_read (f) == -1)
+    if (sunday_file_fill_read (f) == -1)
       return EOF;
 
     if (f->rlen == 0)
@@ -1006,10 +1006,10 @@ fgetwc (FILE * stream)
 
   bytes[0] = c;
 
-  if (!frida_utf8_expected_len (bytes[0], &need))
+  if (!sunday_utf8_expected_len (bytes[0], &need))
   {
     errno = EILSEQ;
-    frida_file_get_impl (stream)->err = errno;
+    sunday_file_get_impl (stream)->err = errno;
     return WEOF;
   }
 
@@ -1020,7 +1020,7 @@ fgetwc (FILE * stream)
     if (c == EOF)
     {
       errno = EILSEQ;
-      frida_file_get_impl (stream)->err = errno;
+      sunday_file_get_impl (stream)->err = errno;
       return WEOF;
     }
 
@@ -1031,7 +1031,7 @@ fgetwc (FILE * stream)
   if (ch == (gunichar) -1 || ch == (gunichar) -2)
   {
     errno = EILSEQ;
-    frida_file_get_impl (stream)->err = errno;
+    sunday_file_get_impl (stream)->err = errno;
     return WEOF;
   }
 
@@ -1041,9 +1041,9 @@ fgetwc (FILE * stream)
 G_GNUC_INTERNAL int
 ungetc (int c, FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (c == EOF)
     return EOF;
@@ -1060,7 +1060,7 @@ ungetc (int c, FILE * stream)
 G_GNUC_INTERNAL wint_t
 ungetwc (wint_t wc, FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
   char tmp[4];
   int len;
   int i;
@@ -1068,7 +1068,7 @@ ungetwc (wint_t wc, FILE * stream)
   if (wc == WEOF)
     return WEOF;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   len = g_unichar_to_utf8 ((gunichar) wc, tmp);
   if (len <= 0 || len > 4)
@@ -1091,11 +1091,11 @@ ungetwc (wint_t wc, FILE * stream)
 G_GNUC_INTERNAL size_t
 fread (void * ptr, size_t size, size_t nmemb, FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
   size_t want, got;
   guint8 * out;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (size == 0 || nmemb == 0)
     return 0;
@@ -1116,7 +1116,7 @@ fread (void * ptr, size_t size, size_t nmemb, FILE * stream)
     {
       ssize_t n;
 
-      n = frida_read_nointr (f->fd, out + got, want - got);
+      n = sunday_read_nointr (f->fd, out + got, want - got);
       if (n == -1)
       {
         f->err = errno;
@@ -1135,7 +1135,7 @@ fread (void * ptr, size_t size, size_t nmemb, FILE * stream)
 
     if (f->rpos == f->rlen)
     {
-      if (frida_file_fill_read (f) == -1)
+      if (sunday_file_fill_read (f) == -1)
         break;
 
       if (f->rlen == 0)
@@ -1161,11 +1161,11 @@ fread (void * ptr, size_t size, size_t nmemb, FILE * stream)
 G_GNUC_INTERNAL size_t
 fwrite (const void * ptr, size_t size, size_t nmemb, FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
   size_t total, off;
   const guint8 * in;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (size == 0 || nmemb == 0)
     return 0;
@@ -1180,7 +1180,7 @@ fwrite (const void * ptr, size_t size, size_t nmemb, FILE * stream)
     {
       ssize_t n;
 
-      n = frida_write_nointr (f->fd, in + off, total - off);
+      n = sunday_write_nointr (f->fd, in + off, total - off);
       if (n == -1)
       {
         f->err = errno;
@@ -1201,7 +1201,7 @@ fwrite (const void * ptr, size_t size, size_t nmemb, FILE * stream)
 
     if (space == 0)
     {
-      if (frida_file_flush_write (f) != 0)
+      if (sunday_file_flush_write (f) != 0)
         break;
 
       space = f->wcap;
@@ -1218,7 +1218,7 @@ fwrite (const void * ptr, size_t size, size_t nmemb, FILE * stream)
     {
       if (memchr (in + (off - take), '\n', take) != NULL)
       {
-        if (frida_file_flush_write (f) != 0)
+        if (sunday_file_flush_write (f) != 0)
           break;
       }
     }
@@ -1266,7 +1266,7 @@ fputwc (wchar_t wc, FILE * stream)
   if (len <= 0 || len > 4)
   {
     errno = EILSEQ;
-    frida_file_get_impl (stream)->err = errno;
+    sunday_file_get_impl (stream)->err = errno;
     return WEOF;
   }
 
@@ -1321,13 +1321,13 @@ fgets (char * s, int size, FILE * stream)
 G_GNUC_INTERNAL int
 fseek (FILE * stream, long offset, int whence)
 {
-  return frida_fseek_impl (stream, (off_t) offset, whence);
+  return sunday_fseek_impl (stream, (off_t) offset, whence);
 }
 
 G_GNUC_INTERNAL long
 ftell (FILE * stream)
 {
-  off_t pos = frida_ftell_impl (stream);
+  off_t pos = sunday_ftell_impl (stream);
   if (pos == (off_t) -1)
     return -1;
 
@@ -1337,45 +1337,45 @@ ftell (FILE * stream)
 #ifdef HAVE_GLIBC
 
 G_GNUC_INTERNAL int
-frida_fseeko_glibc_225 (FILE * stream, off_t offset, int whence)
+sunday_fseeko_glibc_225 (FILE * stream, off_t offset, int whence)
 {
-  return frida_fseek_impl (stream, offset, whence);
+  return sunday_fseek_impl (stream, offset, whence);
 }
-__asm__ (".symver frida_fseeko_glibc_225,fseeko@@GLIBC_2.2.5");
+__asm__ (".symver sunday_fseeko_glibc_225,fseeko@@GLIBC_2.2.5");
 
 G_GNUC_INTERNAL int
-frida_fseeko64_glibc_225 (FILE * stream, off_t offset, int whence)
+sunday_fseeko64_glibc_225 (FILE * stream, off_t offset, int whence)
 {
-  return frida_fseek_impl (stream, offset, whence);
+  return sunday_fseek_impl (stream, offset, whence);
 }
-__asm__ (".symver frida_fseeko64_glibc_225,fseeko64@@GLIBC_2.2.5");
+__asm__ (".symver sunday_fseeko64_glibc_225,fseeko64@@GLIBC_2.2.5");
 
 G_GNUC_INTERNAL off_t
-frida_ftello_glibc_225 (FILE * stream)
+sunday_ftello_glibc_225 (FILE * stream)
 {
-  return frida_ftell_impl (stream);
+  return sunday_ftell_impl (stream);
 }
-__asm__ (".symver frida_ftello_glibc_225,ftello@@GLIBC_2.2.5");
+__asm__ (".symver sunday_ftello_glibc_225,ftello@@GLIBC_2.2.5");
 
 G_GNUC_INTERNAL off_t
-frida_ftello64_glibc_225 (FILE * stream)
+sunday_ftello64_glibc_225 (FILE * stream)
 {
-  return frida_ftell_impl (stream);
+  return sunday_ftell_impl (stream);
 }
-__asm__ (".symver frida_ftello64_glibc_225,ftello64@@GLIBC_2.2.5");
+__asm__ (".symver sunday_ftello64_glibc_225,ftello64@@GLIBC_2.2.5");
 
 #else
 
 G_GNUC_INTERNAL int
 fseeko (FILE * stream, off_t offset, int whence)
 {
-  return frida_fseek_impl (stream, offset, whence);
+  return sunday_fseek_impl (stream, offset, whence);
 }
 
 G_GNUC_INTERNAL off_t
 ftello (FILE * stream)
 {
-  return frida_ftell_impl (stream);
+  return sunday_ftell_impl (stream);
 }
 
 # ifndef HAVE_QNX
@@ -1383,13 +1383,13 @@ ftello (FILE * stream)
 G_GNUC_INTERNAL int
 fseeko64 (FILE * stream, off_t offset, int whence)
 {
-  return frida_fseek_impl (stream, offset, whence);
+  return sunday_fseek_impl (stream, offset, whence);
 }
 
 G_GNUC_INTERNAL off_t
 ftello64 (FILE * stream)
 {
-  return frida_ftell_impl (stream);
+  return sunday_ftell_impl (stream);
 }
 
 # endif
@@ -1397,12 +1397,12 @@ ftello64 (FILE * stream)
 #endif
 
 static int
-frida_fseek_impl (FILE * stream, off_t offset, int whence)
+sunday_fseek_impl (FILE * stream, off_t offset, int whence)
 {
-  FridaFile * f;
+  SundayFile * f;
   off_t r;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
   if (fflush (stream) != 0)
     return -1;
@@ -1412,7 +1412,7 @@ frida_fseek_impl (FILE * stream, off_t offset, int whence)
   f->ungot_len = 0;
   f->eof = FALSE;
 
-  r = frida_lseek_nointr (f->fd, offset, whence);
+  r = sunday_lseek_nointr (f->fd, offset, whence);
   if (r == (off_t) -1)
   {
     f->err = errno;
@@ -1423,14 +1423,14 @@ frida_fseek_impl (FILE * stream, off_t offset, int whence)
 }
 
 static off_t
-frida_ftell_impl (FILE * stream)
+sunday_ftell_impl (FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
   off_t pos;
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
 
-  pos = frida_lseek_nointr (f->fd, 0, SEEK_CUR);
+  pos = sunday_lseek_nointr (f->fd, 0, SEEK_CUR);
   if (pos == (off_t) -1)
   {
     f->err = errno;
@@ -1448,11 +1448,11 @@ frida_ftell_impl (FILE * stream)
 G_GNUC_INTERNAL void
 rewind (FILE * stream)
 {
-  FridaFile * f;
+  SundayFile * f;
 
   fseek (stream, 0, SEEK_SET);
 
-  f = frida_file_get_impl (stream);
+  f = sunday_file_get_impl (stream);
   f->err = 0;
   f->eof = FALSE;
 }
@@ -1464,7 +1464,7 @@ getdelim (char ** lineptr, size_t * n, int delimiter, FILE * stream)
 
   if (*lineptr == NULL || *n == 0)
   {
-    *n = FRIDA_GETLINE_INITIAL_SIZE;
+    *n = SUNDAY_GETLINE_INITIAL_SIZE;
     *lineptr = g_realloc (*lineptr, *n);
   }
 
@@ -1518,7 +1518,7 @@ tmpfile (void)
   FILE * result;
   int fd;
   gchar * path;
-  FridaFile * impl;
+  SundayFile * impl;
 
   fd = g_file_open_tmp ("frida-XXXXXX", &path, NULL);
   if (fd == -1)
@@ -1528,10 +1528,10 @@ tmpfile (void)
 
   g_free (path);
 
-  impl = frida_file_new (fd, TRUE, _IOFBF);
+  impl = sunday_file_new (fd, TRUE, _IOFBF);
 
-  result = frida_file_wrap (impl);
-  frida_stdio_register_stream (result);
+  result = sunday_file_wrap (impl);
+  sunday_stdio_register_stream (result);
 
   return result;
 }
@@ -1542,7 +1542,7 @@ putchar (int c)
   unsigned char ch = c;
   ssize_t n;
 
-  n = frida_write_nointr (1, &ch, 1);
+  n = sunday_write_nointr (1, &ch, 1);
   if (n != 1)
     return EOF;
 
@@ -1557,39 +1557,39 @@ puts (const char * s)
 
   len = strlen (s);
 
-  n = frida_write_nointr (1, s, len);
+  n = sunday_write_nointr (1, s, len);
   if (n != (ssize_t) len)
     return EOF;
 
-  n = frida_write_nointr (1, "\n", 1);
+  n = sunday_write_nointr (1, "\n", 1);
   if (n != 1)
     return EOF;
 
   return 1;
 }
 
-#ifdef HAVE_FRIDA_DIR
+#ifdef HAVE_SUNDAY_DIR
 
 G_GNUC_INTERNAL DIR *
 opendir (const char * name)
 {
   DIR * result;
   int fd;
-  FridaDir * d;
+  SundayDir * d;
 
-  fd = frida_open_nointr (name, O_RDONLY | O_DIRECTORY, 0);
+  fd = sunday_open_nointr (name, O_RDONLY | O_DIRECTORY, 0);
   if (fd == -1)
     return NULL;
 
-  d = g_new0 (FridaDir, 1);
-  d->magic = FRIDA_DIR_MAGIC;
+  d = g_new0 (SundayDir, 1);
+  d->magic = SUNDAY_DIR_MAGIC;
   d->fd = fd;
   d->close_fd = TRUE;
-  d->cap = FRIDA_STDIO_BUFSIZE;
+  d->cap = SUNDAY_STDIO_BUFSIZE;
   d->buf = g_malloc (d->cap);
 
-  result = frida_dir_wrap (d);
-  frida_stdio_register_dir (result);
+  result = sunday_dir_wrap (d);
+  sunday_stdio_register_dir (result);
 
   return result;
 }
@@ -1598,17 +1598,17 @@ G_GNUC_INTERNAL DIR *
 fdopendir (int fd)
 {
   DIR * result;
-  FridaDir * d;
+  SundayDir * d;
 
-  d = g_new0 (FridaDir, 1);
-  d->magic = FRIDA_DIR_MAGIC;
+  d = g_new0 (SundayDir, 1);
+  d->magic = SUNDAY_DIR_MAGIC;
   d->fd = fd;
   d->close_fd = TRUE;
-  d->cap = FRIDA_STDIO_BUFSIZE;
+  d->cap = SUNDAY_STDIO_BUFSIZE;
   d->buf = g_malloc (d->cap);
 
-  result = frida_dir_wrap (d);
-  frida_stdio_register_dir (result);
+  result = sunday_dir_wrap (d);
+  sunday_stdio_register_dir (result);
 
   return result;
 }
@@ -1616,19 +1616,19 @@ fdopendir (int fd)
 G_GNUC_INTERNAL int
 closedir (DIR * dirp)
 {
-  FridaDir * d;
+  SundayDir * d;
 
-  d = frida_dir_get_impl (dirp);
+  d = sunday_dir_get_impl (dirp);
 
   if (d->close_fd)
   {
-    if (frida_close_nointr (d->fd) == -1)
+    if (sunday_close_nointr (d->fd) == -1)
       return -1;
   }
 
-  frida_stdio_unregister_dir (dirp);
+  sunday_stdio_unregister_dir (dirp);
 
-  frida_dir_free (d);
+  sunday_dir_free (d);
 
   return 0;
 }
@@ -1636,16 +1636,16 @@ closedir (DIR * dirp)
 G_GNUC_INTERNAL struct dirent *
 readdir (DIR * dirp)
 {
-  FridaDir * d;
+  SundayDir * d;
 
-  d = frida_dir_get_impl (dirp);
+  d = sunday_dir_get_impl (dirp);
 
   while (TRUE)
   {
     if (d->pos == d->len)
     {
 #ifdef HAVE_DARWIN
-      int res = frida_dir_refill_darwin (d);
+      int res = sunday_dir_refill_darwin (d);
       if (res == -1 || res == 0)
         return NULL;
 #else
@@ -1654,7 +1654,7 @@ readdir (DIR * dirp)
       d->pos = 0;
       d->len = 0;
 
-      n = frida_getdirents_nointr (d->fd, d->buf, d->cap);
+      n = sunday_getdirents_nointr (d->fd, d->buf, d->cap);
       if (n == -1)
         return NULL;
 
@@ -1714,7 +1714,7 @@ readdir (DIR * dirp)
 #endif
       d->cur.d_reclen = sizeof (d->cur);
       d->cur.d_namlen = copy_len;
-      d->cur.d_type = frida_darwin_objtype_to_dtype (objtype);
+      d->cur.d_type = sunday_darwin_objtype_to_dtype (objtype);
 
       memcpy (d->cur.d_name, name, copy_len);
       d->cur.d_name[copy_len] = '\0';
@@ -1772,7 +1772,7 @@ readdir (DIR * dirp)
 #ifdef HAVE_DARWIN
 
 static int
-frida_dir_refill_darwin (FridaDir * d)
+sunday_dir_refill_darwin (SundayDir * d)
 {
   int n_entries;
   guint8 * p;
@@ -1826,7 +1826,7 @@ frida_dir_refill_darwin (FridaDir * d)
 }
 
 static guint8
-frida_darwin_objtype_to_dtype (guint32 objtype)
+sunday_darwin_objtype_to_dtype (guint32 objtype)
 {
   switch (objtype)
   {
@@ -1852,7 +1852,7 @@ frida_darwin_objtype_to_dtype (guint32 objtype)
 #else
 
 static ssize_t
-frida_getdirents_nointr (int fd, void * buf, size_t size)
+sunday_getdirents_nointr (int fd, void * buf, size_t size)
 {
   while (TRUE)
   {
@@ -1900,138 +1900,138 @@ frida_getdirents_nointr (int fd, void * buf, size_t size)
 #endif
 
 static void
-frida_stdio_register_stream (FILE * stream)
+sunday_stdio_register_stream (FILE * stream)
 {
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_add (frida_streams, stream);
+  g_hash_table_add (sunday_streams, stream);
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 }
 
 static void
-frida_stdio_unregister_stream (FILE * stream)
+sunday_stdio_unregister_stream (FILE * stream)
 {
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_remove (frida_streams, stream);
+  g_hash_table_remove (sunday_streams, stream);
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 }
 
-#ifdef HAVE_FRIDA_DIR
+#ifdef HAVE_SUNDAY_DIR
 
 static void
-frida_stdio_register_dir (DIR * dirp)
+sunday_stdio_register_dir (DIR * dirp)
 {
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_add (frida_dirs, dirp);
+  g_hash_table_add (sunday_dirs, dirp);
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 }
 
 static void
-frida_stdio_unregister_dir (DIR * dirp)
+sunday_stdio_unregister_dir (DIR * dirp)
 {
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_remove (frida_dirs, dirp);
+  g_hash_table_remove (sunday_dirs, dirp);
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 }
 
 #endif
 
 static void
-frida_flush_all_streams (int * result)
+sunday_flush_all_streams (int * result)
 {
   GHashTableIter iter;
   gpointer key;
 
-  G_LOCK (frida_stdio);
+  G_LOCK (sunday_stdio);
 
-  g_hash_table_iter_init (&iter, frida_streams);
+  g_hash_table_iter_init (&iter, sunday_streams);
 
   while (g_hash_table_iter_next (&iter, &key, NULL))
   {
     FILE * s = key;
-    FridaFile * f;
+    SundayFile * f;
 
-    f = frida_file_get_impl (s);
+    f = sunday_file_get_impl (s);
 
-    if (frida_file_flush_write (f) != 0)
+    if (sunday_file_flush_write (f) != 0)
       *result = EOF;
   }
 
-  G_UNLOCK (frida_stdio);
+  G_UNLOCK (sunday_stdio);
 }
 
-static FridaFile *
-frida_file_get_impl (FILE * stream)
+static SundayFile *
+sunday_file_get_impl (FILE * stream)
 {
-  FridaFileHandle * h;
+  SundayFileHandle * h;
 
   assert (stream != NULL);
 
-  h = (FridaFileHandle *) stream;
+  h = (SundayFileHandle *) stream;
 
-  assert (h->magic == FRIDA_FILE_MAGIC);
+  assert (h->magic == SUNDAY_FILE_MAGIC);
   assert (h->impl != NULL);
 
   return h->impl;
 }
 
 static void
-frida_file_bind_slot (FILE * slot, FridaFile * impl)
+sunday_file_bind_slot (FILE * slot, SundayFile * impl)
 {
-  FridaFileHandle * h;
+  SundayFileHandle * h;
 
   assert (slot != NULL);
   assert (impl != NULL);
 
-#ifndef FRIDA_STDIO_OPAQUE_FILE
-  assert (sizeof (FILE) >= sizeof (FridaFileHandle));
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
+  assert (sizeof (FILE) >= sizeof (SundayFileHandle));
 #endif
 
-  h = (FridaFileHandle *) slot;
+  h = (SundayFileHandle *) slot;
 
-  h->magic = FRIDA_FILE_MAGIC;
+  h->magic = SUNDAY_FILE_MAGIC;
   h->impl = impl;
 }
 
 static FILE *
-frida_file_wrap (FridaFile * impl)
+sunday_file_wrap (SundayFile * impl)
 {
   FILE * stream;
-  FridaFileHandle * h;
+  SundayFileHandle * h;
 
   assert (impl != NULL);
 
-#ifndef FRIDA_STDIO_OPAQUE_FILE
-  assert (sizeof (FILE) >= sizeof (FridaFileHandle));
+#ifndef SUNDAY_STDIO_OPAQUE_FILE
+  assert (sizeof (FILE) >= sizeof (SundayFileHandle));
   stream = g_new0 (FILE, 1);
 #else
-  stream = (FILE *) g_new0 (FridaFileHandle, 1);
+  stream = (FILE *) g_new0 (SundayFileHandle, 1);
 #endif
 
-  h = (FridaFileHandle *) stream;
-  h->magic = FRIDA_FILE_MAGIC;
+  h = (SundayFileHandle *) stream;
+  h->magic = SUNDAY_FILE_MAGIC;
   h->impl = impl;
 
   return stream;
 }
 
 static void
-frida_file_unwrap (FILE * stream)
+sunday_file_unwrap (FILE * stream)
 {
-  FridaFileHandle * h;
+  SundayFileHandle * h;
 
   assert (stream != NULL);
 
-  h = (FridaFileHandle *) stream;
+  h = (SundayFileHandle *) stream;
 
-  assert (h->magic == FRIDA_FILE_MAGIC);
+  assert (h->magic == SUNDAY_FILE_MAGIC);
 
   h->magic = 0;
   h->impl = NULL;
@@ -2039,12 +2039,12 @@ frida_file_unwrap (FILE * stream)
   g_free (stream);
 }
 
-static FridaFile *
-frida_file_new (int fd, gboolean close_fd, int buf_mode)
+static SundayFile *
+sunday_file_new (int fd, gboolean close_fd, int buf_mode)
 {
-  FridaFile * f;
+  SundayFile * f;
 
-  f = g_new0 (FridaFile, 1);
+  f = g_new0 (SundayFile, 1);
 
   f->fd = fd;
   f->close_fd = close_fd;
@@ -2052,11 +2052,11 @@ frida_file_new (int fd, gboolean close_fd, int buf_mode)
 
   if (buf_mode != _IONBF)
   {
-    f->rcap = FRIDA_STDIO_BUFSIZE;
+    f->rcap = SUNDAY_STDIO_BUFSIZE;
     f->rbuf = g_malloc (f->rcap);
     f->owns_rbuf = TRUE;
 
-    f->wcap = FRIDA_STDIO_BUFSIZE;
+    f->wcap = SUNDAY_STDIO_BUFSIZE;
     f->wbuf = g_malloc (f->wcap);
     f->owns_wbuf = TRUE;
   }
@@ -2065,7 +2065,7 @@ frida_file_new (int fd, gboolean close_fd, int buf_mode)
 }
 
 static void
-frida_file_free (FridaFile * f)
+sunday_file_free (SundayFile * f)
 {
   if (f == NULL)
     return;
@@ -2084,7 +2084,7 @@ frida_file_free (FridaFile * f)
 }
 
 static int
-frida_file_flush_write (FridaFile * f)
+sunday_file_flush_write (SundayFile * f)
 {
   size_t off = 0;
 
@@ -2092,7 +2092,7 @@ frida_file_flush_write (FridaFile * f)
   {
     ssize_t n;
 
-    n = frida_write_nointr (f->fd, f->wbuf + off, f->wlen - off);
+    n = sunday_write_nointr (f->fd, f->wbuf + off, f->wlen - off);
     if (n == -1)
       goto io_failed;
 
@@ -2111,7 +2111,7 @@ io_failed:
 }
 
 static ssize_t
-frida_file_fill_read (FridaFile * f)
+sunday_file_fill_read (SundayFile * f)
 {
   ssize_t n;
 
@@ -2121,7 +2121,7 @@ frida_file_fill_read (FridaFile * f)
   if (f->buf_mode == _IONBF)
     return 0;
 
-  n = frida_read_nointr (f->fd, f->rbuf, f->rcap);
+  n = sunday_read_nointr (f->fd, f->rbuf, f->rcap);
   if (n == -1)
     goto io_failed;
 
@@ -2143,7 +2143,7 @@ io_failed:
 }
 
 static void
-frida_parse_fopen_mode (const char * mode, int * oflags)
+sunday_parse_fopen_mode (const char * mode, int * oflags)
 {
   char c0;
   gboolean plus;
@@ -2173,7 +2173,7 @@ frida_parse_fopen_mode (const char * mode, int * oflags)
 }
 
 static int
-frida_write_formatted_to_fd (int fd, const char * format, va_list args)
+sunday_write_formatted_to_fd (int fd, const char * format, va_list args)
 {
   int result = 0;
   gchar * message;
@@ -2188,7 +2188,7 @@ frida_write_formatted_to_fd (int fd, const char * format, va_list args)
   {
     ssize_t n;
 
-    n = frida_write_nointr (fd, message + off, len - off);
+    n = sunday_write_nointr (fd, message + off, len - off);
     if (n == -1)
       goto io_failed;
 
@@ -2211,7 +2211,7 @@ beach:
 }
 
 static gboolean
-frida_utf8_expected_len (guint8 first, guint * out_len)
+sunday_utf8_expected_len (guint8 first, guint * out_len)
 {
   if (first < 0x80)
   {
@@ -2240,38 +2240,38 @@ frida_utf8_expected_len (guint8 first, guint * out_len)
   return FALSE;
 }
 
-#ifdef HAVE_FRIDA_DIR
+#ifdef HAVE_SUNDAY_DIR
 
-static FridaDir *
-frida_dir_get_impl (DIR * dirp)
+static SundayDir *
+sunday_dir_get_impl (DIR * dirp)
 {
-  FridaDir * d;
+  SundayDir * d;
 
   assert (dirp != NULL);
 
-  d = (FridaDir *) dirp;
+  d = (SundayDir *) dirp;
 
-  assert (d->magic == FRIDA_DIR_MAGIC);
+  assert (d->magic == SUNDAY_DIR_MAGIC);
 
   return d;
 }
 
 static DIR *
-frida_dir_wrap (FridaDir * impl)
+sunday_dir_wrap (SundayDir * impl)
 {
   assert (impl != NULL);
-  assert (impl->magic == FRIDA_DIR_MAGIC);
+  assert (impl->magic == SUNDAY_DIR_MAGIC);
 
   return (DIR *) impl;
 }
 
 static void
-frida_dir_free (FridaDir * d)
+sunday_dir_free (SundayDir * d)
 {
   if (d == NULL)
     return;
 
-  assert (d->magic == FRIDA_DIR_MAGIC);
+  assert (d->magic == SUNDAY_DIR_MAGIC);
 
   d->magic = 0;
 
@@ -2283,7 +2283,7 @@ frida_dir_free (FridaDir * d)
 #endif
 
 static int
-frida_open_nointr (const char * pathname, int flags, mode_t mode)
+sunday_open_nointr (const char * pathname, int flags, mode_t mode)
 {
   while (TRUE)
   {
@@ -2305,7 +2305,7 @@ frida_open_nointr (const char * pathname, int flags, mode_t mode)
 }
 
 static ssize_t
-frida_read_nointr (int fd, void * buf, size_t count)
+sunday_read_nointr (int fd, void * buf, size_t count)
 {
   while (TRUE)
   {
@@ -2323,7 +2323,7 @@ frida_read_nointr (int fd, void * buf, size_t count)
 }
 
 static ssize_t
-frida_write_nointr (int fd, const void * buf, size_t count)
+sunday_write_nointr (int fd, const void * buf, size_t count)
 {
   while (TRUE)
   {
@@ -2341,7 +2341,7 @@ frida_write_nointr (int fd, const void * buf, size_t count)
 }
 
 static int
-frida_close_nointr (int fd)
+sunday_close_nointr (int fd)
 {
   while (TRUE)
   {
@@ -2359,7 +2359,7 @@ frida_close_nointr (int fd)
 }
 
 static off_t
-frida_lseek_nointr (int fd, off_t offset, int whence)
+sunday_lseek_nointr (int fd, off_t offset, int whence)
 {
   while (TRUE)
   {
@@ -2480,7 +2480,7 @@ dup3 (int old_fd, int new_fd, int flags)
 }
 
 G_GNUC_INTERNAL long
-_frida_set_errno (int n)
+_sunday_set_errno (int n)
 {
   errno = n;
 

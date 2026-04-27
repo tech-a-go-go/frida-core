@@ -7,7 +7,7 @@
 #include <windows.h>
 
 void *
-frida_helper_factory_spawn (const gchar * path, const gchar * parameters, FridaPrivilegeLevel level, GError ** error)
+sunday_helper_factory_spawn (const gchar * path, const gchar * parameters, SundayPrivilegeLevel level, GError ** error)
 {
   HANDLE process_handle;
   SHELLEXECUTEINFOW ei = { 0, };
@@ -20,7 +20,7 @@ frida_helper_factory_spawn (const gchar * path, const gchar * parameters, FridaP
 
   ei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI
       | SEE_MASK_UNICODE | SEE_MASK_WAITFORINPUTIDLE;
-  if (level == FRIDA_PRIVILEGE_LEVEL_ELEVATED)
+  if (level == SUNDAY_PRIVILEGE_LEVEL_ELEVATED)
     ei.lpVerb = L"runas";
   else
     ei.lpVerb = L"open";
@@ -43,8 +43,8 @@ frida_helper_factory_spawn (const gchar * path, const gchar * parameters, FridaP
     process_handle = NULL;
 
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        SUNDAY_ERROR,
+        SUNDAY_ERROR_PERMISSION_DENIED,
         "Unable to spawn helper executable at '%s': 0x%08lx",
         path, GetLastError ());
   }
@@ -58,7 +58,7 @@ frida_helper_factory_spawn (const gchar * path, const gchar * parameters, FridaP
 }
 
 gboolean
-frida_helper_instance_is_process_still_running (void * handle)
+sunday_helper_instance_is_process_still_running (void * handle)
 {
   DWORD exit_code;
 
@@ -69,7 +69,7 @@ frida_helper_instance_is_process_still_running (void * handle)
 }
 
 void
-frida_helper_instance_close_process_handle (void * handle)
+sunday_helper_instance_close_process_handle (void * handle)
 {
   g_assert (handle != NULL);
   CloseHandle (handle);

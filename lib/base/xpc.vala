@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class XpcClient : Object {
 		public signal void message (Darwin.Xpc.Object obj);
 
@@ -58,7 +58,7 @@ namespace Frida {
 		public async Darwin.Xpc.Object request (Darwin.Xpc.Object message, Cancellable? cancellable) throws Error, IOError {
 			Darwin.Xpc.Object? reply = null;
 			connection.send_message_with_reply (message, queue, r => {
-				schedule_on_frida_thread (() => {
+				schedule_on_sunday_thread (() => {
 					reply = r;
 					request.callback ();
 					return Source.REMOVE;
@@ -94,7 +94,7 @@ namespace Frida {
 		}
 
 		private void on_event (Darwin.Xpc.Object obj) {
-			schedule_on_frida_thread (() => {
+			schedule_on_sunday_thread (() => {
 				if (obj.type == Darwin.Xpc.Error.TYPE) {
 					var e = (Darwin.Xpc.Error) obj;
 					close_reason = e.get_string (Darwin.Xpc.Error.KEY_DESCRIPTION);
@@ -116,7 +116,7 @@ namespace Frida {
 			});
 		}
 
-		private void schedule_on_frida_thread (owned SourceFunc function) {
+		private void schedule_on_sunday_thread (owned SourceFunc function) {
 			var source = new IdleSource ();
 			source.set_callback ((owned) function);
 			source.attach (main_context);

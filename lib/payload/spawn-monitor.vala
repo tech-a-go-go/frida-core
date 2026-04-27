@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class SpawnMonitor : Object, Gum.InvocationListener {
 		public weak SpawnHandler handler {
 			get;

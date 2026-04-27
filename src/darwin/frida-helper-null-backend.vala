@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class DarwinHelperBackend : Object, DarwinHelper {
 		public signal void idle ();
 		public signal void child_dead (uint pid);

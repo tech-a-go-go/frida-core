@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone {
 	public sealed class QmpClient : Object, AsyncInitable {
 		public signal void event (string name, Json.Node? data);
 
@@ -127,7 +127,7 @@ namespace Frida.Barebone {
 			string chardev = "vserial0";
 			yield add_chardev_from_fd (chardev, fd_name, cancellable);
 
-			yield add_serial_port (chardev, bus, "re.frida.hostlink", "hostlink.port", 1, cancellable);
+			yield add_serial_port (chardev, bus, "re.sunday.hostlink", "hostlink.port", 1, cancellable);
 
 			return new Hostlink () {
 				connection = SocketConnection.factory_create_connection (local_sock),

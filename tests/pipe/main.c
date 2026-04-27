@@ -3,9 +3,9 @@
 int
 main (int argc, char * argv[])
 {
-  FridaPipeTransport * transport = NULL;
+  SundayPipeTransport * transport = NULL;
   const gchar * address;
-  FridaPipe * pipe;
+  SundayPipe * pipe;
   gchar c;
   GError * error = NULL;
 
@@ -14,19 +14,19 @@ main (int argc, char * argv[])
 
   if (argc == 1)
   {
-    transport = frida_pipe_transport_new (NULL);
-    address = frida_pipe_transport_get_local_address (transport);
-    g_print ("listening on '%s'\n", frida_pipe_transport_get_remote_address (transport));
+    transport = sunday_pipe_transport_new (NULL);
+    address = sunday_pipe_transport_get_local_address (transport);
+    g_print ("listening on '%s'\n", sunday_pipe_transport_get_remote_address (transport));
   }
   else
   {
     address = argv[1];
   }
 
-  pipe = frida_pipe_new (address, &error);
+  pipe = sunday_pipe_new (address, &error);
   if (error != NULL)
   {
-    g_printerr ("frida_pipe_new failed: %s\n", error->message);
+    g_printerr ("sunday_pipe_new failed: %s\n", error->message);
   }
   else
   {

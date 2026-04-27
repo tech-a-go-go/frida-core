@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public sealed class WindowsHostSessionBackend : LocalHostSessionBackend {
 		protected override LocalHostSessionProvider make_provider () {
 			return new WindowsHostSessionProvider ();
@@ -48,22 +48,22 @@ namespace Frida {
 
 #if HAVE_EMBEDDED_ASSETS
 			agent = new AgentDescriptor (PathTemplate ("<arch>\\sunday-agent.dll"),
-				new Bytes.static (Frida.Data.Agent.get_frida_agent_arm64_dll_blob ().data),
-				new Bytes.static (Frida.Data.Agent.get_frida_agent_x86_64_dll_blob ().data),
-				new Bytes.static (Frida.Data.Agent.get_frida_agent_x86_dll_blob ().data),
+				new Bytes.static (Sunday.Data.Agent.get_sunday_agent_arm64_dll_blob ().data),
+				new Bytes.static (Sunday.Data.Agent.get_sunday_agent_x86_64_dll_blob ().data),
+				new Bytes.static (Sunday.Data.Agent.get_sunday_agent_x86_dll_blob ().data),
 				new AgentResource[] {
 					new AgentResource ("arm64\\dbghelp.dll",
-						new Bytes.static (Frida.Data.Agent.get_dbghelp_arm64_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_dbghelp_arm64_dll_blob ().data), tempdir),
 					new AgentResource ("arm64\\symsrv.dll",
-						new Bytes.static (Frida.Data.Agent.get_symsrv_arm64_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_symsrv_arm64_dll_blob ().data), tempdir),
 					new AgentResource ("x86_64\\dbghelp.dll",
-						new Bytes.static (Frida.Data.Agent.get_dbghelp_x86_64_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_dbghelp_x86_64_dll_blob ().data), tempdir),
 					new AgentResource ("x86_64\\symsrv.dll",
-						new Bytes.static (Frida.Data.Agent.get_symsrv_x86_64_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_symsrv_x86_64_dll_blob ().data), tempdir),
 					new AgentResource ("x86\\dbghelp.dll",
-						new Bytes.static (Frida.Data.Agent.get_dbghelp_x86_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_dbghelp_x86_dll_blob ().data), tempdir),
 					new AgentResource ("x86\\symsrv.dll",
-						new Bytes.static (Frida.Data.Agent.get_symsrv_x86_dll_blob ().data), tempdir),
+						new Bytes.static (Sunday.Data.Agent.get_symsrv_x86_dll_blob ().data), tempdir),
 				},
 				tempdir
 			);
@@ -72,11 +72,11 @@ namespace Frida {
 
 #if !HAVE_EMBEDDED_ASSETS
 		private static PathTemplate installed_agent_path_template () {
-			return PathTemplate (Frida.agent_path);
+			return PathTemplate (Sunday.agent_path);
 		}
 
 		private static string[] installed_agent_dependencies () {
-			string lib_root = Path.get_dirname (Path.get_dirname (Frida.agent_path));
+			string lib_root = Path.get_dirname (Path.get_dirname (Sunday.agent_path));
 			string[] deps = {};
 			foreach (unowned string arch in new string[] { "arm64", "x86_64", "x86" }) {
 				foreach (unowned string name in new string[] { "dbghelp.dll", "symsrv.dll" }) {

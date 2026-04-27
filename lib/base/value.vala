@@ -1,4 +1,4 @@
-namespace Frida {
+namespace Sunday {
 	public interface ObjectBuilder : Object {
 		public abstract unowned ObjectBuilder begin_dictionary ();
 		public abstract unowned ObjectBuilder set_member_name (string name);

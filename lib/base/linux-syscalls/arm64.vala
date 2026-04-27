@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 
-namespace Frida {
+namespace Sunday {
 	public enum LinuxSyscall {
 		IO_SETUP = 0,
 		IO_DESTROY = 1,

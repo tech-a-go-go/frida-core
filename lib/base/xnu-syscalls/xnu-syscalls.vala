@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 
-namespace Frida {
+namespace Sunday {
 	public extern unowned XnuSyscallSignature[] get_xnu_mach_traps ();
 	public extern unowned XnuSyscallSignature[] get_xnu_bsd_syscalls ();
 

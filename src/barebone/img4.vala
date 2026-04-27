@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaBarebone", gir_version = "1.0")]
-namespace Frida.Barebone.Img4 {
+[CCode (gir_namespace = "SundayBarebone", gir_version = "1.0")]
+namespace Sunday.Barebone.Img4 {
 	public async Payload parse_file (File f, Cancellable? cancellable) throws Error, IOError {
 		Bytes blob = yield FS.read_all_bytes (f, cancellable);
 		return parse (blob);

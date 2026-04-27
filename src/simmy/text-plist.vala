@@ -1,5 +1,5 @@
-[CCode (gir_namespace = "FridaSimmy", gir_version = "1.0")]
-namespace Frida.TextPList {
+[CCode (gir_namespace = "SundaySimmy", gir_version = "1.0")]
+namespace Sunday.TextPList {
 	public class Parser {
 		private Lexer lex;
 		private Token look;

@@ -1,10 +1,10 @@
-public sealed class Frida.TunnelInterfaceObserver : Object, DynamicInterfaceObserver {
+public sealed class Sunday.TunnelInterfaceObserver : Object, DynamicInterfaceObserver {
 #if IOS || TVOS
 	private Gee.Map<string, DynamicInterface> interfaces = new Gee.HashMap<string, DynamicInterface> ();
 
 	private Darwin.SystemConfiguration.DynamicStore? store;
 	private Darwin.GCD.DispatchQueue event_queue =
-		new Darwin.GCD.DispatchQueue ("re.frida.endpoint-enumerator", Darwin.GCD.DispatchQueueAttr.SERIAL);
+		new Darwin.GCD.DispatchQueue ("re.sunday.endpoint-enumerator", Darwin.GCD.DispatchQueueAttr.SERIAL);
 
 	private MainContext? main_context;
 
@@ -49,7 +49,7 @@ public sealed class Frida.TunnelInterfaceObserver : Object, DynamicInterfaceObse
 	}
 
 	private void on_interfaces_changed (CoreFoundation.Array changed_keys) {
-		schedule_on_frida_thread (() => {
+		schedule_on_sunday_thread (() => {
 			if (store != null)
 				handle_interface_changes (changed_keys);
 			return Source.REMOVE;
@@ -87,7 +87,7 @@ public sealed class Frida.TunnelInterfaceObserver : Object, DynamicInterfaceObse
 		}
 	}
 
-	private void schedule_on_frida_thread (owned SourceFunc function) {
+	private void schedule_on_sunday_thread (owned SourceFunc function) {
 		var source = new IdleSource ();
 		source.set_callback ((owned) function);
 		source.attach (main_context);
